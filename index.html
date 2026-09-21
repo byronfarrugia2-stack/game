@@ -1,1400 +1,384 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Auto Revision Generator</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
+  <meta charset="UTF-8">
+  <title>Simple Tower Defense</title>
   <style>
-    /* ===========================
-       GLOBAL STYLES
-       =========================== */
-    :root {
-      --bg: #0f172a;
-      --bg-alt: #020617;
-      --card-bg: #1e293b;
-      --accent: #38bdf8;
-      --accent-soft: rgba(56, 189, 248, 0.15);
-      --accent-strong: #0ea5e9;
-      --text: #e5e7eb;
-      --text-soft: #9ca3af;
-      --danger: #f97373;
-      --success: #4ade80;
-      --border: #1f2937;
-      --shadow-soft: 0 18px 40px rgba(15, 23, 42, 0.85);
-      --radius-lg: 18px;
-      --radius-md: 12px;
-      --radius-sm: 8px;
-      --transition-fast: 0.18s ease-out;
-      --transition-med: 0.25s ease-out;
-      --font-main: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-        sans-serif;
-      --font-mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
     body {
-      font-family: var(--font-main);
-      background: radial-gradient(circle at top, #1e293b 0, #020617 45%, #000 100%);
-      color: var(--text);
-      min-height: 100vh;
+      margin: 0;
+      background: #111;
+      color: #fff;
+      font-family: Arial, sans-serif;
       display: flex;
-      align-items: stretch;
-      justify-content: center;
-      padding: 24px;
-    }
-
-    /* ===========================
-       LAYOUT
-       =========================== */
-
-    .app-shell {
-      width: 100%;
-      max-width: 1200px;
-      background: linear-gradient(145deg, #020617 0, #0b1120 40%, #020617 100%);
-      border-radius: 24px;
-      box-shadow: var(--shadow-soft);
-      border: 1px solid rgba(148, 163, 184, 0.25);
-      display: grid;
-      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.3fr);
-      gap: 0;
-      overflow: hidden;
-    }
-
-    @media (max-width: 900px) {
-      .app-shell {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .left-panel {
-      padding: 24px 24px 20px 24px;
-      border-right: 1px solid rgba(30, 64, 175, 0.4);
-      background: radial-gradient(circle at top left, #0f172a 0, #020617 55%);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .right-panel {
-      padding: 24px 24px 20px 24px;
-      background: radial-gradient(circle at top right, #020617 0, #0b1120 55%);
-      position: relative;
-      overflow: hidden;
-    }
-
-    /* ===========================
-       HEADER
-       =========================== */
-
-    .app-header {
-      margin-bottom: 18px;
-    }
-
-    .app-title-row {
-      display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 6px;
     }
 
-    .app-title {
-      font-size: 1.4rem;
-      font-weight: 650;
-      letter-spacing: 0.03em;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    #ui {
+      margin: 10px;
     }
 
-    .app-title-pill {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      padding: 4px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(56, 189, 248, 0.6);
-      color: var(--accent);
-      background: radial-gradient(circle at top, rgba(56, 189, 248, 0.18), transparent);
+    #ui span {
+      margin-right: 20px;
     }
 
-    .app-subtitle {
-      font-size: 0.9rem;
-      color: var(--text-soft);
+    #gameCanvas {
+      border: 2px solid #fff;
+      background: #222;
     }
 
-    .badge-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
+    #instructions {
       margin-top: 10px;
-    }
-
-    .badge {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      padding: 3px 9px;
-      border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      color: var(--text-soft);
-      background: rgba(15, 23, 42, 0.8);
-    }
-
-    .badge-accent {
-      border-color: rgba(56, 189, 248, 0.7);
-      color: var(--accent);
-      background: rgba(15, 23, 42, 0.9);
-    }
-
-    /* ===========================
-       INPUT AREA
-       =========================== */
-
-    .input-card {
-      margin-top: 16px;
-      background: radial-gradient(circle at top left, #020617 0, #0b1120 55%);
-      border-radius: var(--radius-lg);
-      border: 1px solid rgba(30, 64, 175, 0.5);
-      padding: 14px 14px 12px 14px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .input-card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 8px;
-    }
-
-    .input-card-title {
-      font-size: 0.9rem;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--text-soft);
-    }
-
-    .input-card-hint {
-      font-size: 0.75rem;
-      color: var(--accent);
-      opacity: 0.9;
-    }
-
-    .notes-textarea {
-      width: 100%;
-      min-height: 220px;
-      max-height: 320px;
-      resize: vertical;
-      border-radius: var(--radius-md);
-      border: 1px solid rgba(51, 65, 85, 0.9);
-      background: rgba(15, 23, 42, 0.95);
-      color: var(--text);
-      padding: 10px 11px;
-      font-size: 0.9rem;
-      line-height: 1.4;
-      font-family: var(--font-mono);
-      outline: none;
-      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.9);
-      transition: border-color var(--transition-fast), box-shadow var(--transition-fast),
-        background var(--transition-fast);
-    }
-
-    .notes-textarea:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.5);
-      background: rgba(15, 23, 42, 0.98);
-    }
-
-    .textarea-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 8px;
-      font-size: 0.75rem;
-      color: var(--text-soft);
-    }
-
-    .textarea-footer-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .pill {
-      padding: 3px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(75, 85, 99, 0.8);
-      background: rgba(15, 23, 42, 0.9);
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-    }
-
-    .pill-accent {
-      border-color: rgba(56, 189, 248, 0.7);
-      color: var(--accent);
-    }
-
-    .textarea-footer-right {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .char-count {
-      font-family: var(--font-mono);
-      font-size: 0.7rem;
-      color: var(--text-soft);
-    }
-
-    /* ===========================
-       BUTTONS
-       =========================== */
-
-    .button-row {
-      margin-top: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 10px;
-    }
-
-    .btn {
-      border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.7);
-      padding: 7px 14px;
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      background: rgba(15, 23, 42, 0.9);
-      color: var(--text-soft);
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition: background var(--transition-fast), border-color var(--transition-fast),
-        color var(--transition-fast), transform var(--transition-fast),
-        box-shadow var(--transition-fast);
-    }
-
-    .btn:hover {
-      background: rgba(15, 23, 42, 1);
-      border-color: rgba(148, 163, 184, 1);
-      color: var(--text);
-      transform: translateY(-1px);
-      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.7);
-    }
-
-    .btn-primary {
-      border-color: var(--accent-strong);
-      background: radial-gradient(circle at top, var(--accent-soft), rgba(15, 23, 42, 0.95));
-      color: var(--accent);
-      font-weight: 600;
-    }
-
-    .btn-primary:hover {
-      background: radial-gradient(circle at top, rgba(56, 189, 248, 0.25), #020617);
-      color: #e0f2fe;
-    }
-
-    .btn-icon {
-      font-size: 1rem;
-    }
-
-    .btn-disabled {
-      opacity: 0.4;
-      cursor: default;
-      pointer-events: none;
-    }
-
-    /* ===========================
-       STATUS / ALERTS
-       =========================== */
-
-    .status-bar {
-      margin-top: 10px;
-      font-size: 0.8rem;
-      color: var(--text-soft);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: rgba(148, 163, 184, 0.7);
-    }
-
-    .status-dot-ok {
-      background: var(--accent);
-    }
-
-    .status-dot-warn {
-      background: #facc15;
-    }
-
-    .status-dot-error {
-      background: var(--danger);
-    }
-
-    .status-text-strong {
-      color: var(--accent);
-    }
-
-    .status-text-error {
-      color: var(--danger);
-    }
-
-    /* ===========================
-       RIGHT PANEL: OUTPUT
-       =========================== */
-
-    .output-header {
-      margin-bottom: 12px;
-    }
-
-    .output-title-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .output-title {
-      font-size: 1rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--text-soft);
-    }
-
-    .output-subtitle {
-      font-size: 0.8rem;
-      color: var(--text-soft);
-    }
-
-    .output-tabs {
-      margin-top: 10px;
-      display: inline-flex;
-      border-radius: 999px;
-      border: 1px solid rgba(51, 65, 85, 0.9);
-      overflow: hidden;
-      background: rgba(15, 23, 42, 0.9);
-    }
-
-    .output-tab {
-      padding: 5px 12px;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      cursor: pointer;
-      border-right: 1px solid rgba(31, 41, 55, 0.9);
-      color: var(--text-soft);
-      background: transparent;
-      transition: background var(--transition-fast), color var(--transition-fast);
-    }
-
-    .output-tab:last-child {
-      border-right: none;
-    }
-
-    .output-tab.active {
-      background: radial-gradient(circle at top, var(--accent-soft), rgba(15, 23, 42, 0.95));
-      color: var(--accent);
-    }
-
-    .output-body {
-      margin-top: 14px;
-      display: grid;
-      grid-template-rows: auto 1fr;
-      gap: 10px;
-      height: calc(100% - 40px);
-    }
-
-    .output-summary {
-      font-size: 0.8rem;
-      color: var(--text-soft);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .summary-pill-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .summary-pill {
-      padding: 3px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(55, 65, 81, 0.9);
-      font-size: 0.7rem;
-      font-family: var(--font-mono);
-      color: var(--text-soft);
-      background: rgba(15, 23, 42, 0.9);
-    }
-
-    .summary-pill-strong {
-      border-color: rgba(56, 189, 248, 0.8);
-      color: var(--accent);
-    }
-
-    .output-main {
-      border-radius: var(--radius-lg);
-      border: 1px solid rgba(31, 41, 55, 0.9);
-      background: radial-gradient(circle at top right, #020617 0, #0b1120 55%);
-      padding: 12px;
-      overflow: hidden;
-      display: grid;
-      grid-template-rows: auto 1fr;
-      gap: 8px;
-    }
-
-    .output-main-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      font-size: 0.8rem;
-      color: var(--text-soft);
-    }
-
-    .output-main-title {
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .output-main-controls {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .toggle {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.75rem;
-      cursor: pointer;
-      color: var(--text-soft);
-    }
-
-    .toggle input {
-      accent-color: var(--accent);
-    }
-
-    .output-list {
-      margin-top: 4px;
-      overflow-y: auto;
-      padding-right: 4px;
-    }
-
-    .output-empty {
-      font-size: 0.85rem;
-      color: var(--text-soft);
+      font-size: 14px;
       text-align: center;
-      padding: 30px 10px;
+      max-width: 600px;
     }
 
-    /* ===========================
-       FLASHCARD STYLES
-       =========================== */
-
-    .flashcard {
-      border-radius: var(--radius-md);
-      border: 1px solid rgba(55, 65, 81, 0.9);
-      background: linear-gradient(145deg, #020617 0, #0f172a 40%, #020617 100%);
-      padding: 10px 11px;
-      margin-bottom: 8px;
-      position: relative;
+    .button {
+      padding: 5px 10px;
+      background: #28a745;
+      border: none;
+      color: #fff;
       cursor: pointer;
-      transition: transform var(--transition-fast), box-shadow var(--transition-fast),
-        border-color var(--transition-fast), background var(--transition-fast);
+      margin-left: 10px;
     }
 
-    .flashcard:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.9);
-      border-color: rgba(56, 189, 248, 0.7);
-      background: linear-gradient(145deg, #020617 0, #0b1120 40%, #020617 100%);
-    }
-
-    .flashcard-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 6px;
-      font-size: 0.75rem;
-      color: var(--text-soft);
-    }
-
-    .flashcard-type {
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      font-weight: 600;
-    }
-
-    .flashcard-tag {
-      padding: 2px 7px;
-      border-radius: 999px;
-      border: 1px solid rgba(75, 85, 99, 0.9);
-      font-size: 0.7rem;
-      font-family: var(--font-mono);
-      color: var(--text-soft);
-    }
-
-    .flashcard-body {
-      font-size: 0.9rem;
-      line-height: 1.4;
-    }
-
-    .flashcard-front {
-      color: #e5e7eb;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .flashcard-back {
-      color: var(--text-soft);
-    }
-
-    .flashcard-back.hidden {
-      filter: blur(4px);
-      opacity: 0.4;
-    }
-
-    .flashcard-footer {
-      margin-top: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 0.75rem;
-      color: var(--text-soft);
-    }
-
-    .flashcard-footer-left {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .flashcard-footer-right {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .flashcard-btn {
-      padding: 2px 7px;
-      border-radius: 999px;
-      border: 1px solid rgba(75, 85, 99, 0.9);
-      font-size: 0.7rem;
-      cursor: pointer;
-      background: rgba(15, 23, 42, 0.9);
-      color: var(--text-soft);
-      transition: background var(--transition-fast), color var(--transition-fast),
-        border-color var(--transition-fast);
-    }
-
-    .flashcard-btn:hover {
-      background: rgba(15, 23, 42, 1);
-      color: var(--accent);
-      border-color: rgba(56, 189, 248, 0.7);
-    }
-
-    .flashcard-btn-known {
-      border-color: rgba(22, 163, 74, 0.8);
-      color: var(--success);
-    }
-
-    .flashcard-btn-unknown {
-      border-color: rgba(220, 38, 38, 0.8);
-      color: var(--danger);
-    }
-
-    /* ===========================
-       QUIZ ITEM STYLES
-       =========================== */
-
-    .quiz-item {
-      border-radius: var(--radius-md);
-      border: 1px solid rgba(55, 65, 81, 0.9);
-      background: linear-gradient(145deg, #020617 0, #0f172a 40%, #020617 100%);
-      padding: 10px 11px;
-      margin-bottom: 8px;
-      position: relative;
-      transition: transform var(--transition-fast), box-shadow var(--transition-fast),
-        border-color var(--transition-fast), background var(--transition-fast);
-    }
-
-    .quiz-item:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.9);
-      border-color: rgba(56, 189, 248, 0.7);
-      background: linear-gradient(145deg, #020617 0, #0b1120 40%, #020617 100%);
-    }
-
-    .quiz-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 6px;
-      font-size: 0.75rem;
-      color: var(--text-soft);
-    }
-
-    .quiz-type {
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      font-weight: 600;
-    }
-
-    .quiz-style-tag {
-      padding: 2px 7px;
-      border-radius: 999px;
-      border: 1px solid rgba(75, 85, 99, 0.9);
-      font-size: 0.7rem;
-      font-family: var(--font-mono);
-      color: var(--text-soft);
-    }
-
-    .quiz-body {
-      font-size: 0.9rem;
-      line-height: 1.4;
-      color: #e5e7eb;
-    }
-
-    .quiz-question {
-      margin-bottom: 4px;
-      font-weight: 600;
-    }
-
-    .quiz-answer {
-      font-size: 0.85rem;
-      color: var(--text-soft);
-    }
-
-    .quiz-answer.hidden {
-      filter: blur(4px);
-      opacity: 0.4;
-    }
-
-    .quiz-footer {
-      margin-top: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 0.75rem;
-      color: var(--text-soft);
-    }
-
-    .quiz-footer-left {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .quiz-footer-right {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .quiz-btn {
-      padding: 2px 7px;
-      border-radius: 999px;
-      border: 1px solid rgba(75, 85, 99, 0.9);
-      font-size: 0.7rem;
-      cursor: pointer;
-      background: rgba(15, 23, 42, 0.9);
-      color: var(--text-soft);
-      transition: background var(--transition-fast), color var(--transition-fast),
-        border-color var(--transition-fast);
-    }
-
-    .quiz-btn:hover {
-      background: rgba(15, 23, 42, 1);
-      color: var(--accent);
-      border-color: rgba(56, 189, 248, 0.7);
-    }
-
-    .quiz-btn-show {
-      border-color: rgba(56, 189, 248, 0.8);
-      color: var(--accent);
-    }
-
-    /* ===========================
-       SCROLLBAR
-       =========================== */
-
-    .output-list::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .output-list::-webkit-scrollbar-track {
-      background: rgba(15, 23, 42, 0.9);
-      border-radius: 999px;
-    }
-
-    .output-list::-webkit-scrollbar-thumb {
-      background: rgba(55, 65, 81, 0.9);
-      border-radius: 999px;
-    }
-
-    .output-list::-webkit-scrollbar-thumb:hover {
-      background: rgba(75, 85, 99, 0.9);
+    .button:disabled {
+      background: #555;
+      cursor: default;
     }
   </style>
 </head>
 <body>
-  <div class="app-shell">
-    <!-- ===========================
-         LEFT PANEL: INPUT
-         =========================== -->
-    <section class="left-panel">
-      <header class="app-header">
-        <div class="app-title-row">
-          <div class="app-title">
-            <span>Revision Engine</span>
-            <span class="app-title-pill">Drop Notes → Get Flashcards</span>
-          </div>
-        </div>
-        <p class="app-subtitle">
-          Paste your class notes, textbook chunks, or random brain dumps.  
-          The app will auto‑generate flashcards and quiz questions.
-        </p>
-        <div class="badge-row">
-          <span class="badge badge-accent">Auto‑Flashcards</span>
-          <span class="badge">Quiz Generator</span>
-          <span class="badge">No Login</span>
-          <span class="badge">Runs in Browser</span>
-        </div>
-      </header>
+  <div id="ui">
+    <span>Money: <span id="money">100</span></span>
+    <span>Lives: <span id="lives">20</span></span>
+    <span>Wave: <span id="wave">0</span></span>
+    <button id="startWaveBtn" class="button">Start Wave</button>
+  </div>
 
-      <div class="input-card">
-        <div class="input-card-header">
-          <div class="input-card-title">Notes Input</div>
-          <div class="input-card-hint">Tip: Use headings, colons, and bullet lists.</div>
-        </div>
+  <canvas id="gameCanvas" width="800" height="500"></canvas>
 
-        <textarea
-          id="notesInput"
-          class="notes-textarea"
-          placeholder="Example:
-
-Photosynthesis: process by which plants convert light energy into chemical energy.
-The Treaty of Versailles was signed in 1919.
-Gravity is the force that attracts objects towards the centre of the Earth.
-
-- Renewable energy
-- Solar power
-- Wind turbines
-- Hydroelectric dams
-"
-        ></textarea>
-
-        <div class="textarea-footer">
-          <div class="textarea-footer-left">
-            <span class="pill pill-accent">Patterns</span>
-            <span>Term: definition • X is Y • bullet lists</span>
-          </div>
-          <div class="textarea-footer-right">
-            <span class="char-count" id="charCount">0 chars</span>
-          </div>
-        </div>
-
-        <div class="button-row">
-          <button class="btn" id="btnClear">
-            <span class="btn-icon">🧹</span>
-            <span>Clear</span>
-          </button>
-          <button class="btn btn-primary" id="btnGenerate">
-            <span class="btn-icon">⚡</span>
-            <span>Generate Revision</span>
-          </button>
-        </div>
-
-        <div class="status-bar" id="statusBar">
-          <span class="status-dot"></span>
-          <span class="status-text">Paste some notes to get started.</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===========================
-         RIGHT PANEL: OUTPUT
-         =========================== -->
-    <section class="right-panel">
-      <header class="output-header">
-        <div class="output-title-row">
-          <div>
-            <div class="output-title">Generated Revision</div>
-            <div class="output-subtitle">
-              Flashcards and quiz questions created from your notes.
-            </div>
-          </div>
-          <div class="output-tabs">
-            <button class="output-tab active" data-tab="flashcards">Flashcards</button>
-            <button class="output-tab" data-tab="quizzes">Quizzes</button>
-          </div>
-        </div>
-      </header>
-
-      <div class="output-body">
-        <div class="output-summary">
-          <div class="summary-pill-row">
-            <span class="summary-pill summary-pill-strong" id="summaryFlashcards">
-              0 flashcards
-            </span>
-            <span class="summary-pill" id="summaryQuizzes">
-              0 quizzes
-            </span>
-            <span class="summary-pill" id="summaryLines">
-              0 lines processed
-            </span>
-          </div>
-          <div>
-            <span class="summary-pill">Click cards to toggle answers.</span>
-          </div>
-        </div>
-
-        <div class="output-main">
-          <div class="output-main-header">
-            <div class="output-main-title" id="outputMainTitle">Flashcards</div>
-            <div class="output-main-controls">
-              <label class="toggle">
-                <input type="checkbox" id="toggleHideAnswers" />
-                <span>Hide answers</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="output-list" id="outputList">
-            <div class="output-empty">
-              No revision generated yet.  
-              Paste notes on the left and click <strong>Generate Revision</strong>.
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+  <div id="instructions">
+    <p><b>How to play:</b></p>
+    <p>
+      - Enemies follow the light grey path from left to right.<br>
+      - Click on a green tower spot to place a tower (costs 50).<br>
+      - Towers automatically shoot nearby enemies.<br>
+      - Click "Start Wave" to send the next wave.<br>
+      - If enemies reach the end, you lose lives. Lose all = game over.
+    </p>
   </div>
 
   <script>
-    // ===========================
-    // UTILITIES
-    // ===========================
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
 
-    function cleanText(text) {
-      return text
-        .replace(/\r/g, "")
-        .split("\n")
-        .map((line) => line.trim())
-        .filter((line) => line.length > 0);
-    }
+    const moneyEl = document.getElementById('money');
+    const livesEl = document.getElementById('lives');
+    const waveEl = document.getElementById('wave');
+    const startWaveBtn = document.getElementById('startWaveBtn');
 
-    function updateCharCount() {
-      const textarea = document.getElementById("notesInput");
-      const charCount = document.getElementById("charCount");
-      const len = textarea.value.length;
-      charCount.textContent = len + " chars";
-    }
+    let money = 100;
+    let lives = 20;
+    let wave = 0;
+    let gameOver = false;
 
-    function setStatus(type, message) {
-      const statusBar = document.getElementById("statusBar");
-      const dot = statusBar.querySelector(".status-dot");
-      const text = statusBar.querySelector(".status-text");
+    moneyEl.textContent = money;
+    livesEl.textContent = lives;
+    waveEl.textContent = wave;
 
-      dot.className = "status-dot";
-      text.className = "status-text";
+    // Path points (simple polyline)
+    const path = [
+      { x: 0, y: 250 },
+      { x: 200, y: 250 },
+      { x: 200, y: 150 },
+      { x: 400, y: 150 },
+      { x: 400, y: 350 },
+      { x: 600, y: 350 },
+      { x: 800, y: 350 }
+    ];
 
-      if (type === "ok") {
-        dot.classList.add("status-dot-ok");
-        text.classList.add("status-text-strong");
-      } else if (type === "warn") {
-        dot.classList.add("status-dot-warn");
-      } else if (type === "error") {
-        dot.classList.add("status-dot-error");
-        text.classList.add("status-text-error");
+    // Tower spots
+    const towerSpots = [
+      { x: 150, y: 200, hasTower: false },
+      { x: 260, y: 100, hasTower: false },
+      { x: 350, y: 220, hasTower: false },
+      { x: 500, y: 300, hasTower: false },
+      { x: 700, y: 250, hasTower: false }
+    ];
+
+    const towers = [];
+    const enemies = [];
+    const bullets = [];
+
+    const TOWER_COST = 50;
+    const ENEMY_BASE_HEALTH = 30;
+    const ENEMY_BASE_SPEED = 0.6;
+
+    function spawnWave() {
+      if (gameOver) return;
+      wave++;
+      waveEl.textContent = wave;
+
+      const enemyCount = 5 + wave * 2;
+      for (let i = 0; i < enemyCount; i++) {
+        enemies.push({
+          pathIndex: 0,
+          x: path[0].x,
+          y: path[0].y,
+          progress: -i * 40, // staggered start
+          speed: ENEMY_BASE_SPEED + wave * 0.05,
+          health: ENEMY_BASE_HEALTH + wave * 5,
+          alive: true
+        });
       }
-
-      text.textContent = message;
     }
 
-    // ===========================
-    // PATTERN DETECTORS
-    // ===========================
+    function drawPath() {
+      ctx.strokeStyle = '#777';
+      ctx.lineWidth = 20;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(path[0].x, path[0].y);
+      for (let i = 1; i < path.length; i++) {
+        ctx.lineTo(path[i].x, path[i].y);
+      }
+      ctx.stroke();
+    }
 
-    function extractDefinitionCards(lines) {
-      const cards = [];
+    function drawTowerSpots() {
+      towerSpots.forEach(spot => {
+        ctx.fillStyle = spot.hasTower ? '#444' : '#2ecc71';
+        ctx.beginPath();
+        ctx.arc(spot.x, spot.y, 18, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#000';
+        ctx.stroke();
+      });
+    }
 
-      for (const line of lines) {
-        const parts = line.split(":");
-        if (parts.length >= 2 && parts[0].length > 2) {
-          const term = parts[0].trim();
-          const definition = parts.slice(1).join(":").trim();
+    function drawTowers() {
+      towers.forEach(t => {
+        ctx.fillStyle = '#3498db';
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, 14, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.stroke();
 
-          if (term && definition) {
-            cards.push({
-              type: "flashcard",
-              style: "definition",
-              front: term,
-              back: definition,
-              meta: {
-                source: line,
-              },
-            });
+        // Range circle (optional visual)
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, t.range, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+    }
+
+    function drawEnemies() {
+      enemies.forEach(e => {
+        if (!e.alive) return;
+        ctx.fillStyle = '#e74c3c';
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, 12, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Health bar
+        ctx.fillStyle = '#000';
+        ctx.fillRect(e.x - 15, e.y - 20, 30, 4);
+        ctx.fillStyle = '#2ecc71';
+        const healthRatio = e.health / (ENEMY_BASE_HEALTH + wave * 5);
+        ctx.fillRect(e.x - 15, e.y - 20, 30 * healthRatio, 4);
+      });
+    }
+
+    function drawBullets() {
+      bullets.forEach(b => {
+        ctx.fillStyle = '#f1c40f';
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function updateEnemies(dt) {
+      enemies.forEach(e => {
+        if (!e.alive) return;
+        e.progress += e.speed * dt;
+
+        // Move along path segments
+        let remaining = e.progress;
+        let i = 0;
+        while (i < path.length - 1 && remaining > 0) {
+          const p1 = path[i];
+          const p2 = path[i + 1];
+          const segLen = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+          if (remaining > segLen) {
+            remaining -= segLen;
+            i++;
+          } else {
+            const t = remaining / segLen;
+            e.x = p1.x + (p2.x - p1.x) * t;
+            e.y = p1.y + (p2.y - p1.y) * t;
+            break;
           }
         }
-      }
 
-      return cards;
+        // If past last segment → reached end
+        if (i >= path.length - 1 && remaining > 0) {
+          e.alive = false;
+          lives--;
+          livesEl.textContent = lives;
+          if (lives <= 0) {
+            gameOver = true;
+          }
+        }
+      });
+
+      // Remove dead enemies
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        if (!enemies[i].alive || enemies[i].health <= 0) {
+          enemies.splice(i, 1);
+        }
+      }
     }
 
-    function extractFactCards(lines) {
-      const cards = [];
-
-      for (const line of lines) {
-        if (/ was | is | are | means | refers to /i.test(line)) {
-          if (/ was signed in /i.test(line)) {
-            const match = line.match(/^(.*) was signed in (.*)\.?$/i);
-            if (match) {
-              const subject = match[1].trim();
-              const answer = match[2].trim();
-
-              cards.push({
-                type: "flashcard",
-                style: "fact",
-                front: `When was ${subject} signed?`,
-                back: answer,
-                meta: { source: line },
-              });
-
-              cards.push({
-                type: "quiz",
-                style: "short-answer",
-                question: `When was ${subject} signed?`,
-                answer,
-                meta: { source: line },
-              });
+    function updateTowers(dt) {
+      towers.forEach(t => {
+        t.cooldown -= dt;
+        if (t.cooldown <= 0) {
+          // Find target in range
+          let target = null;
+          let maxProgress = -Infinity;
+          enemies.forEach(e => {
+            if (!e.alive) return;
+            const dist = Math.hypot(e.x - t.x, e.y - t.y);
+            if (dist <= t.range && e.progress > maxProgress) {
+              maxProgress = e.progress;
+              target = e;
             }
-            continue;
-          }
-
-          const generic = line.match(
-            /^(.*) (is|are|means|refers to) (.*)\.?$/i
-          );
-          if (generic) {
-            const subject = generic[1].trim();
-            const verb = generic[2].trim();
-            const info = generic[3].trim();
-
-            cards.push({
-              type: "flashcard",
-              style: "concept",
-              front: subject,
-              back: `${subject} ${verb} ${info}`,
-              meta: { source: line },
-            });
-
-            cards.push({
-              type: "quiz",
-              style: "short-answer",
-              question: `What ${verb} ${subject}?`,
-              answer: info,
-              meta: { source: line },
-            });
-          }
-        }
-      }
-
-      return cards;
-    }
-
-    function extractListCards(lines) {
-      const cards = [];
-      let currentList = [];
-
-      function flushList() {
-        if (currentList.length >= 3) {
-          cards.push({
-            type: "quiz",
-            style: "list",
-            question: `Name ${currentList.length} items from this list.`,
-            answer: currentList.slice(),
-            meta: { source: currentList.join(" • ") },
           });
-        }
-        currentList = [];
-      }
 
-      for (const line of lines) {
-        if (/^[-*•]/.test(line)) {
-          currentList.push(line.replace(/^[-*•]\s*/, "").trim());
-        } else {
-          flushList();
-        }
-      }
-
-      flushList();
-
-      return cards;
-    }
-
-    // ===========================
-    // MAIN GENERATOR
-    // ===========================
-
-    function generateRevisionFromNotes(rawNotes) {
-      const lines = cleanText(rawNotes);
-
-      const definitionCards = extractDefinitionCards(lines);
-      const factCards = extractFactCards(lines);
-      const listCards = extractListCards(lines);
-
-      const all = [...definitionCards, ...factCards, ...listCards];
-
-      const flashcards = all.filter((c) => c.type === "flashcard");
-      const quizzes = all.filter((c) => c.type === "quiz");
-
-      return {
-        flashcards,
-        quizzes,
-        rawLines: lines,
-      };
-    }
-
-    // ===========================
-    // RENDERING
-    // ===========================
-
-    function renderSummary(revision) {
-      const summaryFlashcards = document.getElementById("summaryFlashcards");
-      const summaryQuizzes = document.getElementById("summaryQuizzes");
-      const summaryLines = document.getElementById("summaryLines");
-
-      summaryFlashcards.textContent = `${revision.flashcards.length} flashcards`;
-      summaryQuizzes.textContent = `${revision.quizzes.length} quizzes`;
-      summaryLines.textContent = `${revision.rawLines.length} lines processed`;
-    }
-
-    function renderFlashcards(flashcards, hideAnswers) {
-      const outputList = document.getElementById("outputList");
-      outputList.innerHTML = "";
-
-      if (!flashcards.length) {
-        outputList.innerHTML =
-          '<div class="output-empty">No flashcards generated. Try adding more structured notes (e.g. <code>Term: definition</code> or <code>X is Y</code>).</div>';
-        return;
-      }
-
-      flashcards.forEach((card, index) => {
-        const wrapper = document.createElement("div");
-        wrapper.className = "flashcard";
-        wrapper.dataset.index = index;
-
-        const header = document.createElement("div");
-        header.className = "flashcard-header";
-
-        const typeSpan = document.createElement("span");
-        typeSpan.className = "flashcard-type";
-        typeSpan.textContent =
-          card.style === "definition"
-            ? "Definition"
-            : card.style === "fact"
-            ? "Fact"
-            : "Concept";
-
-        const tagSpan = document.createElement("span");
-        tagSpan.className = "flashcard-tag";
-        tagSpan.textContent = "Auto‑generated";
-
-        header.appendChild(typeSpan);
-        header.appendChild(tagSpan);
-
-        const body = document.createElement("div");
-        body.className = "flashcard-body";
-
-        const front = document.createElement("div");
-        front.className = "flashcard-front";
-        front.textContent = card.front;
-
-        const back = document.createElement("div");
-        back.className = "flashcard-back";
-        back.textContent = card.back;
-        if (hideAnswers) {
-          back.classList.add("hidden");
-        }
-
-        body.appendChild(front);
-        body.appendChild(back);
-
-        const footer = document.createElement("div");
-        footer.className = "flashcard-footer";
-
-        const footerLeft = document.createElement("div");
-        footerLeft.className = "flashcard-footer-left";
-        footerLeft.innerHTML = `<span>Source line</span>`;
-
-        const footerRight = document.createElement("div");
-        footerRight.className = "flashcard-footer-right";
-
-        const btnKnown = document.createElement("button");
-        btnKnown.className = "flashcard-btn flashcard-btn-known";
-        btnKnown.textContent = "I know this";
-
-        const btnUnknown = document.createElement("button");
-        btnUnknown.className = "flashcard-btn flashcard-btn-unknown";
-        btnUnknown.textContent = "I don’t know this";
-
-        footerRight.appendChild(btnKnown);
-        footerRight.appendChild(btnUnknown);
-
-        footer.appendChild(footerLeft);
-        footer.appendChild(footerRight);
-
-        wrapper.appendChild(header);
-        wrapper.appendChild(body);
-        wrapper.appendChild(footer);
-
-        wrapper.addEventListener("click", (e) => {
-          if (
-            e.target === btnKnown ||
-            e.target === btnUnknown ||
-            e.target.tagName.toLowerCase() === "button"
-          ) {
-            return;
+          if (target) {
+            bullets.push({
+              x: t.x,
+              y: t.y,
+              target: target,
+              speed: 0.4,
+              damage: 10 + wave * 2
+            });
+            t.cooldown = t.fireRate;
           }
-          back.classList.toggle("hidden");
-        });
-
-        btnKnown.addEventListener("click", (e) => {
-          e.stopPropagation();
-          wrapper.style.borderColor = "rgba(22, 163, 74, 0.9)";
-        });
-
-        btnUnknown.addEventListener("click", (e) => {
-          e.stopPropagation();
-          wrapper.style.borderColor = "rgba(220, 38, 38, 0.9)";
-        });
-
-        outputList.appendChild(wrapper);
+        }
       });
     }
 
-    function renderQuizzes(quizzes, hideAnswers) {
-      const outputList = document.getElementById("outputList");
-      outputList.innerHTML = "";
-
-      if (!quizzes.length) {
-        outputList.innerHTML =
-          '<div class="output-empty">No quiz questions generated. Try adding more factual sentences (e.g. <code>X is Y</code> or <code>The Treaty was signed in 1919</code>).</div>';
-        return;
-      }
-
-      quizzes.forEach((quiz, index) => {
-        const wrapper = document.createElement("div");
-        wrapper.className = "quiz-item";
-        wrapper.dataset.index = index;
-
-        const header = document.createElement("div");
-        header.className = "quiz-header";
-
-        const typeSpan = document.createElement("span");
-        typeSpan.className = "quiz-type";
-        typeSpan.textContent = "Quiz";
-
-        const styleSpan = document.createElement("span");
-        styleSpan.className = "quiz-style-tag";
-        styleSpan.textContent =
-          quiz.style === "short-answer"
-            ? "Short answer"
-            : quiz.style === "list"
-            ? "List"
-            : "Question";
-
-        header.appendChild(typeSpan);
-        header.appendChild(styleSpan);
-
-        const body = document.createElement("div");
-        body.className = "quiz-body";
-
-        const question = document.createElement("div");
-        question.className = "quiz-question";
-        question.textContent = quiz.question;
-
-        const answer = document.createElement("div");
-        answer.className = "quiz-answer";
-        if (Array.isArray(quiz.answer)) {
-          answer.textContent = quiz.answer.join(", ");
-        } else {
-          answer.textContent = quiz.answer;
-        }
-        if (hideAnswers) {
-          answer.classList.add("hidden");
-        }
-
-        body.appendChild(question);
-        body.appendChild(answer);
-
-        const footer = document.createElement("div");
-        footer.className = "quiz-footer";
-
-        const footerLeft = document.createElement("div");
-        footerLeft.className = "quiz-footer-left";
-        footerLeft.innerHTML = `<span>Source line</span>`;
-
-        const footerRight = document.createElement("div");
-        footerRight.className = "quiz-footer-right";
-
-        const btnShow = document.createElement("button");
-        btnShow.className = "quiz-btn quiz-btn-show";
-        btnShow.textContent = "Show answer";
-
-        footerRight.appendChild(btnShow);
-
-        footer.appendChild(footerLeft);
-        footer.appendChild(footerRight);
-
-        wrapper.appendChild(header);
-        wrapper.appendChild(body);
-        wrapper.appendChild(footer);
-
-        btnShow.addEventListener("click", (e) => {
-          e.stopPropagation();
-          answer.classList.toggle("hidden");
-        });
-
-        wrapper.addEventListener("click", () => {
-          answer.classList.toggle("hidden");
-        });
-
-        outputList.appendChild(wrapper);
-      });
-    }
-
-    // ===========================
-    // TAB + TOGGLE HANDLING
-    // ===========================
-
-    let currentTab = "flashcards";
-    let currentRevision = { flashcards: [], quizzes: [], rawLines: [] };
-
-    function setActiveTab(tab) {
-      currentTab = tab;
-      const tabs = document.querySelectorAll(".output-tab");
-      tabs.forEach((t) => {
-        if (t.dataset.tab === tab) {
-          t.classList.add("active");
-        } else {
-          t.classList.remove("active");
-        }
-      });
-
-      const title = document.getElementById("outputMainTitle");
-      const hideAnswers = document.getElementById("toggleHideAnswers").checked;
-
-      if (tab === "flashcards") {
-        title.textContent = "Flashcards";
-        renderFlashcards(currentRevision.flashcards, hideAnswers);
-      } else {
-        title.textContent = "Quizzes";
-        renderQuizzes(currentRevision.quizzes, hideAnswers);
-      }
-    }
-
-    function handleHideAnswersToggle() {
-      const hideAnswers = document.getElementById("toggleHideAnswers").checked;
-      if (currentTab === "flashcards") {
-        renderFlashcards(currentRevision.flashcards, hideAnswers);
-      } else {
-        renderQuizzes(currentRevision.quizzes, hideAnswers);
-      }
-    }
-
-    // ===========================
-    // EVENT WIRING
-    // ===========================
-
-    function init() {
-      const textarea = document.getElementById("notesInput");
-      const btnGenerate = document.getElementById("btnGenerate");
-      const btnClear = document.getElementById("btnClear");
-      const tabs = document.querySelectorAll(".output-tab");
-      const toggleHideAnswers = document.getElementById("toggleHideAnswers");
-
-      textarea.addEventListener("input", () => {
-        updateCharCount();
-        if (textarea.value.trim().length === 0) {
-          setStatus("warn", "Paste some notes to get started.");
-        } else {
-          setStatus("ok", "Ready to generate revision.");
-        }
-      });
-
-      btnGenerate.addEventListener("click", () => {
-        const rawNotes = textarea.value.trim();
-        if (!rawNotes) {
-          setStatus("error", "You need to paste some notes first.");
+    function updateBullets(dt) {
+      bullets.forEach(b => {
+        if (!b.target || !b.target.alive) {
+          b.dead = true;
           return;
         }
-
-        const revision = generateRevisionFromNotes(rawNotes);
-        currentRevision = revision;
-
-        renderSummary(revision);
-        setActiveTab(currentTab);
-
-        if (!revision.flashcards.length && !revision.quizzes.length) {
-          setStatus(
-            "warn",
-            "No patterns detected. Try adding more structured notes (e.g. 'Term: definition', 'X is Y', bullet lists)."
-          );
+        const dx = b.target.x - b.x;
+        const dy = b.target.y - b.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < 5) {
+          // Hit
+          b.target.health -= b.damage;
+          if (b.target.health <= 0) {
+            b.target.alive = false;
+            money += 10;
+            moneyEl.textContent = money;
+          }
+          b.dead = true;
         } else {
-          setStatus(
-            "ok",
-            `Generated ${revision.flashcards.length} flashcards and ${revision.quizzes.length} quizzes.`
-          );
+          const vx = (dx / dist) * b.speed * dt;
+          const vy = (dy / dist) * b.speed * dt;
+          b.x += vx;
+          b.y += vy;
         }
       });
 
-      btnClear.addEventListener("click", () => {
-        textarea.value = "";
-        updateCharCount();
-        currentRevision = { flashcards: [], quizzes: [], rawLines: [] };
-        renderSummary(currentRevision);
-        setActiveTab(currentTab);
-        setStatus("warn", "Notes cleared. Paste new notes to generate revision.");
-      });
-
-      tabs.forEach((tab) => {
-        tab.addEventListener("click", () => {
-          setActiveTab(tab.dataset.tab);
-        });
-      });
-
-      toggleHideAnswers.addEventListener("change", handleHideAnswersToggle);
-
-      updateCharCount();
-      setStatus("warn", "Paste some notes to get started.");
+      // Remove dead bullets
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        if (bullets[i].dead) bullets.splice(i, 1);
+      }
     }
 
-    document.addEventListener("DOMContentLoaded", init);
+    let lastTime = performance.now();
+
+    function gameLoop(timestamp) {
+      const dt = timestamp - lastTime;
+      lastTime = timestamp;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      drawPath();
+      drawTowerSpots();
+      drawTowers();
+      drawEnemies();
+      drawBullets();
+
+      if (!gameOver) {
+        updateEnemies(dt);
+        updateTowers(dt);
+        updateBullets(dt);
+      } else {
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.font = '40px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    requestAnimationFrame(gameLoop);
+
+    // Place towers on click
+    canvas.addEventListener('click', (e) => {
+      if (gameOver) return;
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+
+      // Find nearest spot
+      let closest = null;
+      let closestDist = 9999;
+      towerSpots.forEach(spot => {
+        const d = Math.hypot(mx - spot.x, my - spot.y);
+        if (d < 20 && d < closestDist) {
+          closest = spot;
+          closestDist = d;
+        }
+      });
+
+      if (closest && !closest.hasTower) {
+        if (money >= TOWER_COST) {
+          money -= TOWER_COST;
+          moneyEl.textContent = money;
+          closest.hasTower = true;
+          towers.push({
+            x: closest.x,
+            y: closest.y,
+            range: 120,
+            fireRate: 600, // ms
+            cooldown: 0
+          });
+        } else {
+          console.log('Not enough money!');
+        }
+      }
+    });
+
+    startWaveBtn.addEventListener('click', () => {
+      if (gameOver) return;
+      if (enemies.length === 0) {
+        spawnWave();
+      }
+    });
   </script>
 </body>
 </html>
