@@ -2,320 +2,998 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>FluxBound Prototype</title>
+  <title>FluxBound - Complex Prototype</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
     body {
       margin: 0;
       background: #050814;
-      color: #fff;
-      font-family: sans-serif;
+      color: #e5e7eb;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       overflow: hidden;
     }
     #gameCanvas {
-      background: radial-gradient(circle at top, #1b2b4f 0%, #050814 60%);
       display: block;
       margin: 0 auto;
+      background: radial-gradient(circle at top, #1b2b4f 0%, #050814 60%);
       border: 2px solid #3af;
     }
-    #ui {
+    #overlayUI {
       position: fixed;
-      top: 10px;
-      left: 10px;
+      top: 0;
+      left: 0;
+      width: 100%;
+      pointer-events: none;
+      color: #e5e7eb;
       font-size: 14px;
+    }
+    .hud-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 16px;
+    }
+    .hud-block {
       background: rgba(0,0,0,0.5);
-      padding: 8px 12px;
       border-radius: 6px;
       border: 1px solid #3af;
+      padding: 6px 10px;
+      margin-right: 8px;
     }
-    .ability {
-      color: #3af;
+    .hud-title {
+      font-weight: 600;
+      color: #93c5fd;
+      margin-bottom: 2px;
+    }
+    .hud-text {
+      font-size: 12px;
+    }
+    .hud-ability {
+      color: #22c55e;
+      font-weight: 600;
+    }
+    .center-message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+    }
+    .center-message h1 {
+      font-size: 40px;
+      margin-bottom: 8px;
+      color: #bfdbfe;
+      text-shadow: 0 0 12px rgba(59,130,246,0.8);
+    }
+    .center-message p {
+      font-size: 16px;
+      margin: 4px 0;
+      color: #e5e7eb;
+    }
+    .center-message .hint {
+      font-size: 14px;
+      color: #9ca3af;
+    }
+    .menu-list {
+      margin-top: 16px;
+    }
+    .menu-item {
+      margin: 4px 0;
+      font-size: 16px;
+    }
+    .menu-key {
+      color: #22c55e;
+      font-weight: 600;
+    }
+    .fade {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background: #000;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+    }
+    .fade.visible {
+      opacity: 0.8;
     }
   </style>
 </head>
 <body>
-  <canvas id="gameCanvas" width="960" height="540"></canvas>
-  <div id="ui">
-    <div><b>FluxBound Prototype</b></div>
-    <div>Tempo (Time): <span class="ability">W A S D</span> move, <span class="ability">F</span> slow time</div>
-    <div>Vector (Gravity): <span class="ability">Arrow keys</span> move, <span class="ability">RShift</span> flip gravity</div>
-    <div>Goal: Both players reach the glowing portal.</div>
-    <div>Level: <span id="levelDisplay">1</span></div>
+  <canvas id="gameCanvas" width="1280" height="720"></canvas>
+  <div id="overlayUI">
+    <div class="hud-row">
+      <div style="display:flex;">
+        <div class="hud-block">
+          <div class="hud-title">FluxBound</div>
+          <div class="hud-text">
+            Scene: <span id="hudScene">Splash</span><br />
+            Level: <span id="hudLevel">-</span>
+          </div>
+        </div>
+        <div class="hud-block">
+          <div class="hud-title">Tempo (Time)</div>
+          <div class="hud-text">
+            Move: <span class="hud-ability">W A S D</span><br />
+            Slow Time: <span class="hud-ability">F</span><br />
+            Jump: <span class="hud-ability">W</span>
+          </div>
+        </div>
+        <div class="hud-block">
+          <div class="hud-title">Vector (Gravity)</div>
+          <div class="hud-text">
+            Move: <span class="hud-ability">Arrow Keys</span><br />
+            Flip Gravity: <span class="hud-ability">Right Shift</span><br />
+            Jump: <span class="hud-ability">Up Arrow</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;">
+        <div class="hud-block">
+          <div class="hud-title">Abilities</div>
+          <div class="hud-text">
+            Time Scale: <span id="hudTimeScale">1.0</span><br />
+            Gravity: <span id="hudGravity">Down</span><br />
+            Tempo Slow CD: <span id="hudTempoCD">Ready</span><br />
+            Vector Flip CD: <span id="hudVectorCD">Ready</span>
+          </div>
+        </div>
+        <div class="hud-block">
+          <div class="hud-title">Controls</div>
+          <div class="hud-text">
+            Pause: <span class="hud-ability">Esc</span><br />
+            Reset Level: <span class="hud-ability">R</span><br />
+            Level Select: <span class="hud-ability">L</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="fadeLayer" class="fade"></div>
+  <div id="centerMessage" class="center-message" style="display:none;">
+    <h1 id="centerTitle">FluxBound</h1>
+    <p id="centerBody">Press any key to begin.</p>
+    <p id="centerHint" class="hint">WASD + Arrow Keys · F to slow time · Right Shift to flip gravity</p>
+    <div id="centerMenu" class="menu-list"></div>
   </div>
 
   <script>
+    /************************************************************
+     * BASIC ENGINE STRUCTURE
+     ************************************************************/
+
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
     const WIDTH = canvas.width;
     const HEIGHT = canvas.height;
-    const GRAVITY_NORMAL = 0.6;
-    const GRAVITY_INVERTED = -0.6;
 
-    let gravityDirection = 1; // 1 = normal, -1 = inverted
-    let timeScale = 1;        // 1 = normal, 0.4 = slow
+    const hudScene = document.getElementById("hudScene");
+    const hudLevel = document.getElementById("hudLevel");
+    const hudTimeScale = document.getElementById("hudTimeScale");
+    const hudGravity = document.getElementById("hudGravity");
+    const hudTempoCD = document.getElementById("hudTempoCD");
+    const hudVectorCD = document.getElementById("hudVectorCD");
+
+    const fadeLayer = document.getElementById("fadeLayer");
+    const centerMessage = document.getElementById("centerMessage");
+    const centerTitle = document.getElementById("centerTitle");
+    const centerBody = document.getElementById("centerBody");
+    const centerHint = document.getElementById("centerHint");
+    const centerMenu = document.getElementById("centerMenu");
 
     const keys = {};
+    const keyPressedOnce = {};
 
     window.addEventListener("keydown", (e) => {
       keys[e.code] = true;
+      keyPressedOnce[e.code] = true;
     });
     window.addEventListener("keyup", (e) => {
       keys[e.code] = false;
     });
 
-    class Player {
-      constructor(x, y, color) {
+    function consumeKeyOnce(code) {
+      if (keyPressedOnce[code]) {
+        keyPressedOnce[code] = false;
+        return true;
+      }
+      return false;
+    }
+
+    /************************************************************
+     * UTILS
+     ************************************************************/
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function randRange(min, max) {
+      return min + Math.random() * (max - min);
+    }
+
+    function now() {
+      return performance.now();
+    }
+
+    /************************************************************
+     * CAMERA
+     ************************************************************/
+
+    class Camera {
+      constructor() {
+        this.x = 0;
+        this.y = 0;
+        this.targetX = 0;
+        this.targetY = 0;
+        this.smooth = 0.1;
+      }
+
+      follow(players) {
+        // Center between players
+        const cx = (players[0].x + players[1].x) / 2;
+        const cy = (players[0].y + players[1].y) / 2;
+        this.targetX = cx - WIDTH / 2;
+        this.targetY = cy - HEIGHT / 2;
+      }
+
+      update() {
+        this.x = lerp(this.x, this.targetX, this.smooth);
+        this.y = lerp(this.y, this.targetY, this.smooth);
+        this.x = clamp(this.x, 0, 2000 - WIDTH); // world bounds
+        this.y = clamp(this.y, 0, 1200 - HEIGHT);
+      }
+
+      applyTransform() {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.translate(-this.x, -this.y);
+      }
+
+      resetTransform() {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+      }
+    }
+
+    /************************************************************
+     * INPUT MAPPING
+     ************************************************************/
+
+    const InputMap = {
+      tempoLeft: "KeyA",
+      tempoRight: "KeyD",
+      tempoJump: "KeyW",
+      tempoSlow: "KeyF",
+
+      vectorLeft: "ArrowLeft",
+      vectorRight: "ArrowRight",
+      vectorJump: "ArrowUp",
+      vectorFlip: "ShiftRight",
+
+      pause: "Escape",
+      reset: "KeyR",
+      levelSelect: "KeyL",
+      confirm: "Enter",
+      up: "ArrowUp",
+      down: "ArrowDown"
+    };
+
+    /************************************************************
+     * PHYSICS OBJECTS
+     ************************************************************/
+
+    class PhysicsBody {
+      constructor(x, y, w, h) {
         this.x = x;
         this.y = y;
         this.vx = 0;
         this.vy = 0;
-        this.width = 28;
-        this.height = 40;
-        this.color = color;
+        this.width = w;
+        this.height = h;
         this.onGround = false;
+        this.bounciness = 0;
       }
 
-      update(input, platforms) {
-        const moveSpeed = 3;
-        const jumpSpeed = 10;
+      applyGravity(gravity, timeScale) {
+        this.vy += gravity * timeScale;
+      }
 
-        // Horizontal movement
-        if (input.left) this.vx = -moveSpeed;
-        else if (input.right) this.vx = moveSpeed;
-        else this.vx = 0;
-
-        // Jump (depends on gravity direction)
-        if (input.jump && this.onGround) {
-          this.vy = -jumpSpeed * gravityDirection;
-          this.onGround = false;
-        }
-
-        // Gravity
-        this.vy += GRAVITY_NORMAL * gravityDirection * timeScale;
-
-        // Apply velocity
+      integrate(timeScale) {
         this.x += this.vx * timeScale;
         this.y += this.vy * timeScale;
+      }
 
-        // Collisions with platforms
-        this.onGround = false;
-        for (let p of platforms) {
-          if (this.x < p.x + p.width &&
-              this.x + this.width > p.x &&
-              this.y < p.y + p.height &&
-              this.y + this.height > p.y) {
-
-            // Simple vertical resolution
-            if (gravityDirection === 1) {
-              // Normal gravity: stand on top
-              this.y = p.y - this.height;
-              this.vy = 0;
-              this.onGround = true;
-            } else {
-              // Inverted gravity: stand on bottom
-              this.y = p.y + p.height;
-              this.vy = 0;
-              this.onGround = true;
-            }
-          }
-        }
-
-        // Keep inside screen
+      resolveWorldBounds(worldWidth, worldHeight, gravityDirection) {
         if (this.x < 0) this.x = 0;
-        if (this.x + this.width > WIDTH) this.x = WIDTH - this.width;
+        if (this.x + this.width > worldWidth) this.x = worldWidth - this.width;
+
         if (gravityDirection === 1) {
-          if (this.y + this.height > HEIGHT) {
-            this.y = HEIGHT - this.height;
-            this.vy = 0;
+          if (this.y + this.height > worldHeight) {
+            this.y = worldHeight - this.height;
+            this.vy = -this.vy * this.bounciness;
             this.onGround = true;
           }
         } else {
           if (this.y < 0) {
             this.y = 0;
-            this.vy = 0;
+            this.vy = -this.vy * this.bounciness;
             this.onGround = true;
           }
         }
       }
-
-      draw() {
-        ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-      }
     }
 
     class Platform {
-      constructor(x, y, width, height, type = "static") {
+      constructor(x, y, w, h, type = "static", options = {}) {
         this.x = x;
         this.y = y;
-        this.width = width;
-        this.height = height;
+        this.width = w;
+        this.height = h;
         this.type = type;
+        this.options = options;
         this.baseX = x;
         this.baseY = y;
         this.t = Math.random() * 100;
       }
 
-      update() {
+      update(timeScale) {
         if (this.type === "movingHorizontal") {
-          this.t += 0.02 * timeScale;
-          this.x = this.baseX + Math.sin(this.t) * 80;
+          this.t += (this.options.speed || 0.02) * timeScale;
+          const amp = this.options.amplitude || 120;
+          this.x = this.baseX + Math.sin(this.t) * amp;
         } else if (this.type === "movingVertical") {
-          this.t += 0.02 * timeScale;
-          this.y = this.baseY + Math.sin(this.t) * 60;
+          this.t += (this.options.speed || 0.02) * timeScale;
+          const amp = this.options.amplitude || 80;
+          this.y = this.baseY + Math.sin(this.t) * amp;
         }
       }
 
       draw() {
-        ctx.fillStyle = "#1f2937";
+        ctx.fillStyle = "#111827";
         ctx.fillRect(this.x, this.y, this.width, this.height);
-        ctx.strokeStyle = "#3af";
+        ctx.strokeStyle = "#3b82f6";
+        ctx.lineWidth = 2;
         ctx.strokeRect(this.x, this.y, this.width, this.height);
       }
     }
 
     class Portal {
-      constructor(x, y) {
+      constructor(x, y, radius) {
         this.x = x;
         this.y = y;
-        this.radius = 26;
+        this.radius = radius;
+        this.pulse = Math.random() * Math.PI * 2;
+      }
+
+      update(timeScale) {
+        this.pulse += 0.03 * timeScale;
       }
 
       draw() {
+        const r = this.radius + Math.sin(this.pulse) * 4;
         const gradient = ctx.createRadialGradient(
-          this.x, this.y, 5,
-          this.x, this.y, this.radius
+          this.x, this.y, 4,
+          this.x, this.y, r
         );
-        gradient.addColorStop(0, "#fff");
-        gradient.addColorStop(0.4, "#3af");
+        gradient.addColorStop(0, "#ffffff");
+        gradient.addColorStop(0.3, "#3b82f6");
+        gradient.addColorStop(0.7, "#22c55e");
         gradient.addColorStop(1, "rgba(0,0,0,0)");
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      contains(player) {
-        const cx = player.x + player.width / 2;
-        const cy = player.y + player.height / 2;
+      contains(body) {
+        const cx = body.x + body.width / 2;
+        const cy = body.y + body.height / 2;
         const dx = cx - this.x;
         const dy = cy - this.y;
         return Math.sqrt(dx * dx + dy * dy) < this.radius;
       }
     }
 
-    // LEVELS
-    const levels = [
+    /************************************************************
+     * PLAYER CLASSES
+     ************************************************************/
+
+    class PlayerTempo {
+      constructor(x, y) {
+        this.body = new PhysicsBody(x, y, 32, 48);
+        this.color = "#facc15";
+        this.name = "Tempo";
+        this.maxSpeed = 4;
+        this.jumpSpeed = 11;
+        this.slowActive = false;
+        this.slowCooldown = 0;
+        this.slowDuration = 1800; // ms
+        this.slowCooldownMax = 4000; // ms
+        this.lastSlowStart = 0;
+      }
+
+      update(input, platforms, gravityDirection, timeScale, dt) {
+        const moveSpeed = this.maxSpeed;
+
+        // Horizontal movement
+        if (input.left) this.body.vx = -moveSpeed;
+        else if (input.right) this.body.vx = moveSpeed;
+        else this.body.vx = 0;
+
+        // Jump
+        if (input.jump && this.body.onGround) {
+          this.body.vy = -this.jumpSpeed * gravityDirection;
+          this.body.onGround = false;
+        }
+
+        // Ability: Slow time
+        if (input.slow && !this.slowActive && this.slowCooldown <= 0) {
+          this.slowActive = true;
+          this.lastSlowStart = dt;
+          this.slowCooldown = this.slowCooldownMax;
+        }
+
+        if (this.slowActive) {
+          const elapsed = dt - this.lastSlowStart;
+          if (elapsed > this.slowDuration) {
+            this.slowActive = false;
+          }
+        } else {
+          if (this.slowCooldown > 0) {
+            this.slowCooldown -= (dt - this.lastSlowStart);
+            this.lastSlowStart = dt;
+          }
+        }
+
+        // Gravity
+        this.body.applyGravity(0.6 * gravityDirection, timeScale);
+
+        // Integrate
+        this.body.integrate(timeScale);
+
+        // Collisions
+        this.body.onGround = false;
+        for (let p of platforms) {
+          if (this.body.x < p.x + p.width &&
+              this.body.x + this.body.width > p.x &&
+              this.body.y < p.y + p.height &&
+              this.body.y + this.body.height > p.y) {
+
+            if (gravityDirection === 1) {
+              this.body.y = p.y - this.body.height;
+              this.body.vy = 0;
+              this.body.onGround = true;
+            } else {
+              this.body.y = p.y + p.height;
+              this.body.vy = 0;
+              this.body.onGround = true;
+            }
+          }
+        }
+
+        this.body.resolveWorldBounds(2000, 1200, gravityDirection);
+      }
+
+      getEffectiveTimeScale(baseTimeScale) {
+        if (this.slowActive) {
+          return baseTimeScale * 0.4;
+        }
+        return baseTimeScale;
+      }
+
+      draw() {
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.body.x, this.body.y, this.body.width, this.body.height);
+        ctx.fillStyle = "#fef3c7";
+        ctx.font = "12px sans-serif";
+        ctx.fillText("Tempo", this.body.x, this.body.y - 6);
+      }
+    }
+
+    class PlayerVector {
+      constructor(x, y) {
+        this.body = new PhysicsBody(x, y, 32, 48);
+        this.color = "#22c55e";
+        this.name = "Vector";
+        this.maxSpeed = 4;
+        this.jumpSpeed = 11;
+        this.gravityDirection = 1;
+        this.flipCooldown = 0;
+        this.flipCooldownMax = 2500; // ms
+        this.lastFlipTime = 0;
+      }
+
+      update(input, platforms, globalGravityDirection, timeScale, dt) {
+        const moveSpeed = this.maxSpeed;
+
+        // Horizontal movement
+        if (input.left) this.body.vx = -moveSpeed;
+        else if (input.right) this.body.vx = moveSpeed;
+        else this.body.vx = 0;
+
+        // Jump
+        if (input.jump && this.body.onGround) {
+          this.body.vy = -this.jumpSpeed * globalGravityDirection;
+          this.body.onGround = false;
+        }
+
+        // Ability: Flip gravity (global)
+        if (input.flip && this.flipCooldown <= 0) {
+          this.flipCooldown = this.flipCooldownMax;
+          this.lastFlipTime = dt;
+          return true; // signal gravity flip
+        }
+
+        if (this.flipCooldown > 0) {
+          this.flipCooldown -= (dt - this.lastFlipTime);
+          this.lastFlipTime = dt;
+        }
+
+        // Gravity
+        this.body.applyGravity(0.6 * globalGravityDirection, timeScale);
+
+        // Integrate
+        this.body.integrate(timeScale);
+
+        // Collisions
+        this.body.onGround = false;
+        for (let p of platforms) {
+          if (this.body.x < p.x + p.width &&
+              this.body.x + this.body.width > p.x &&
+              this.body.y < p.y + p.height &&
+              this.body.y + this.body.height > p.y) {
+
+            if (globalGravityDirection === 1) {
+              this.body.y = p.y - this.body.height;
+              this.body.vy = 0;
+              this.body.onGround = true;
+            } else {
+              this.body.y = p.y + p.height;
+              this.body.vy = 0;
+              this.body.onGround = true;
+            }
+          }
+        }
+
+        this.body.resolveWorldBounds(2000, 1200, globalGravityDirection);
+        return false;
+      }
+
+      draw() {
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.body.x, this.body.y, this.body.width, this.body.height);
+        ctx.fillStyle = "#dcfce7";
+        ctx.font = "12px sans-serif";
+        ctx.fillText("Vector", this.body.x, this.body.y - 6);
+      }
+    }
+
+    /************************************************************
+     * LEVEL DATA
+     ************************************************************/
+
+    const LevelDefinitions = [
       {
+        id: 1,
         name: "Clockwork Corridor",
+        description: "Moving gears and shifting platforms. Learn time slow and gravity flip.",
+        tempoStart: { x: 120, y: 900 },
+        vectorStart: { x: 180, y: 900 },
+        portal: { x: 1800, y: 260, radius: 40 },
         platforms: [
-          new Platform(0, 500, 960, 40),          // floor
-          new Platform(150, 420, 120, 20),
-          new Platform(320, 360, 120, 20, "movingHorizontal"),
-          new Platform(520, 300, 120, 20),
-          new Platform(720, 240, 140, 20, "movingVertical")
-        ],
-        portal: new Portal(820, 210),
-        tempoStart: { x: 60, y: 450 },
-        vectorStart: { x: 120, y: 450 }
+          // Floor
+          { x: 0, y: 1000, w: 2000, h: 40, type: "static" },
+
+          // Steps
+          { x: 260, y: 920, w: 140, h: 20, type: "static" },
+          { x: 460, y: 860, w: 140, h: 20, type: "static" },
+          { x: 660, y: 800, w: 140, h: 20, type: "static" },
+
+          // Moving horizontal platform
+          { x: 900, y: 720, w: 160, h: 20, type: "movingHorizontal", options: { amplitude: 160, speed: 0.025 } },
+
+          // Static platforms
+          { x: 1200, y: 640, w: 160, h: 20, type: "static" },
+          { x: 1400, y: 560, w: 160, h: 20, type: "static" },
+
+          // Moving vertical platform near portal
+          { x: 1650, y: 520, w: 160, h: 20, type: "movingVertical", options: { amplitude: 160, speed: 0.03 } }
+        ]
       },
       {
+        id: 2,
         name: "Inverted Garden",
+        description: "Gravity tricks and vine-like platforms. Use flips to climb in weird directions.",
+        tempoStart: { x: 160, y: 900 },
+        vectorStart: { x: 220, y: 900 },
+        portal: { x: 1700, y: 220, radius: 40 },
         platforms: [
-          new Platform(0, 500, 960, 40),
-          new Platform(200, 430, 120, 20),
-          new Platform(380, 360, 120, 20),
-          new Platform(560, 290, 120, 20, "movingVertical"),
-          new Platform(740, 220, 140, 20)
-        ],
-        portal: new Portal(820, 190),
-        tempoStart: { x: 80, y: 450 },
-        vectorStart: { x: 140, y: 450 }
+          { x: 0, y: 1000, w: 2000, h: 40, type: "static" },
+
+          { x: 260, y: 920, w: 140, h: 20, type: "static" },
+          { x: 460, y: 860, w: 140, h: 20, type: "static" },
+          { x: 660, y: 800, w: 140, h: 20, type: "static" },
+
+          { x: 900, y: 720, w: 160, h: 20, type: "movingVertical", options: { amplitude: 120, speed: 0.03 } },
+          { x: 1100, y: 640, w: 160, h: 20, type: "static" },
+          { x: 1300, y: 560, w: 160, h: 20, type: "movingHorizontal", options: { amplitude: 140, speed: 0.02 } },
+
+          { x: 1550, y: 480, w: 160, h: 20, type: "static" },
+          { x: 1750, y: 400, w: 160, h: 20, type: "static" }
+        ]
+      },
+      {
+        id: 3,
+        name: "Neon Labyrinth",
+        description: "Tight jumps, moving hazards, and precise timing.",
+        tempoStart: { x: 120, y: 900 },
+        vectorStart: { x: 180, y: 900 },
+        portal: { x: 1850, y: 300, radius: 40 },
+        platforms: [
+          { x: 0, y: 1000, w: 2000, h: 40, type: "static" },
+
+          { x: 260, y: 920, w: 140, h: 20, type: "static" },
+          { x: 460, y: 860, w: 140, h: 20, type: "static" },
+          { x: 660, y: 800, w: 140, h: 20, type: "static" },
+
+          { x: 900, y: 720, w: 160, h: 20, type: "movingHorizontal", options: { amplitude: 200, speed: 0.03 } },
+          { x: 1200, y: 640, w: 160, h: 20, type: "movingVertical", options: { amplitude: 140, speed: 0.035 } },
+          { x: 1450, y: 560, w: 160, h: 20, type: "static" },
+          { x: 1650, y: 480, w: 160, h: 20, type: "movingHorizontal", options: { amplitude: 120, speed: 0.025 } }
+        ]
       }
     ];
 
-    let currentLevelIndex = 0;
-    let platforms = [];
-    let portal;
-    let tempo;
-    let vector;
+    /************************************************************
+     * GAME STATE MANAGER
+     ************************************************************/
+
+    const GameState = {
+      currentScene: "splash", // splash, menu, levelSelect, gameplay, pause
+      currentLevelIndex: 0,
+      gravityDirection: 1,
+      baseTimeScale: 1,
+      tempo: null,
+      vector: null,
+      platforms: [],
+      portal: null,
+      camera: new Camera(),
+      lastFrameTime: now(),
+      accumulatedTime: 0,
+      transitionActive: false,
+      transitionTargetScene: null
+    };
+
+    function setScene(sceneName) {
+      GameState.currentScene = sceneName;
+      hudScene.textContent = sceneName.charAt(0).toUpperCase() + sceneName.slice(1);
+    }
+
+    function startTransition(targetScene) {
+      GameState.transitionActive = true;
+      GameState.transitionTargetScene = targetScene;
+      fadeLayer.classList.add("visible");
+      setTimeout(() => {
+        setScene(targetScene);
+        fadeLayer.classList.remove("visible");
+        GameState.transitionActive = false;
+      }, 600);
+    }
+
+    function showCenterMessage(title, body, hint, menuItems = []) {
+      centerTitle.textContent = title;
+      centerBody.textContent = body;
+      centerHint.textContent = hint || "";
+      centerMenu.innerHTML = "";
+      if (menuItems.length > 0) {
+        menuItems.forEach(item => {
+          const div = document.createElement("div");
+          div.className = "menu-item";
+          div.innerHTML = `<span class="menu-key">${item.key}</span> - ${item.label}`;
+          centerMenu.appendChild(div);
+        });
+      }
+      centerMessage.style.display = "block";
+    }
+
+    function hideCenterMessage() {
+      centerMessage.style.display = "none";
+    }
+
+    /************************************************************
+     * LEVEL LOADING
+     ************************************************************/
 
     function loadLevel(index) {
-      const level = levels[index];
-      platforms = level.platforms.map(p => p); // shallow copy
-      portal = level.portal;
-      tempo = new Player(level.tempoStart.x, level.tempoStart.y, "#ffcc33");
-      vector = new Player(level.vectorStart.x, level.vectorStart.y, "#33ffcc");
-      document.getElementById("levelDisplay").textContent = (index + 1) + " - " + level.name;
-      gravityDirection = 1;
-      timeScale = 1;
+      const def = LevelDefinitions[index];
+      GameState.currentLevelIndex = index;
+      hudLevel.textContent = `${def.id} - ${def.name}`;
+
+      GameState.gravityDirection = 1;
+      GameState.baseTimeScale = 1;
+
+      GameState.tempo = new PlayerTempo(def.tempoStart.x, def.tempoStart.y);
+      GameState.vector = new PlayerVector(def.vectorStart.x, def.vectorStart.y);
+
+      GameState.platforms = def.platforms.map(p => new Platform(p.x, p.y, p.w, p.h, p.type, p.options || {}));
+      GameState.portal = new Portal(def.portal.x, def.portal.y, def.portal.radius);
+
+      GameState.camera.x = 0;
+      GameState.camera.y = 0;
+      GameState.camera.targetX = 0;
+      GameState.camera.targetY = 0;
     }
 
-    loadLevel(currentLevelIndex);
+    /************************************************************
+     * SCENE LOGIC
+     ************************************************************/
 
-    function handleAbilities() {
-      // Tempo: slow time with F
-      if (keys["KeyF"]) {
-        timeScale = 0.4;
-      } else {
-        timeScale = 1;
-      }
+    function updateSplash(dt) {
+      showCenterMessage(
+        "FluxBound",
+        "Press any key to enter the menu.",
+        "Two-player puzzle platformer · Time & Gravity · Inspired by Fireboy & Watergirl"
+      );
 
-      // Vector: flip gravity with RightShift
-      if (keys["ShiftRight"] && !handleAbilities.gravityPressed) {
-        gravityDirection *= -1;
-        handleAbilities.gravityPressed = true;
-      }
-      if (!keys["ShiftRight"]) {
-        handleAbilities.gravityPressed = false;
-      }
-    }
-    handleAbilities.gravityPressed = false;
-
-    function update() {
-      handleAbilities();
-
-      // Update platforms
-      for (let p of platforms) {
-        p.update();
-      }
-
-      // Tempo input (WASD)
-      const tempoInput = {
-        left: keys["KeyA"],
-        right: keys["KeyD"],
-        jump: keys["KeyW"]
-      };
-
-      // Vector input (Arrow keys)
-      const vectorInput = {
-        left: keys["ArrowLeft"],
-        right: keys["ArrowRight"],
-        jump: keys["ArrowUp"]
-      };
-
-      tempo.update(tempoInput, platforms);
-      vector.update(vectorInput, platforms);
-
-      // Check portal
-      const tempoIn = portal.contains(tempo);
-      const vectorIn = portal.contains(vector);
-
-      if (tempoIn && vectorIn) {
-        currentLevelIndex++;
-        if (currentLevelIndex >= levels.length) {
-          currentLevelIndex = 0; // loop back for now
+      for (let code in keyPressedOnce) {
+        if (consumeKeyOnce(code)) {
+          hideCenterMessage();
+          startTransition("menu");
+          break;
         }
-        loadLevel(currentLevelIndex);
       }
     }
 
-    function drawBackground() {
+    function drawSplash() {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
-      // Subtle grid / dimension feel
-      ctx.strokeStyle = "rgba(58,175,255,0.1)";
+      // Background
+      drawBackgroundGrid();
+
+      // Logo
+      ctx.fillStyle = "#bfdbfe";
+      ctx.font = "48px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("FluxBound", WIDTH / 2, HEIGHT / 2 - 80);
+
+      ctx.font = "20px sans-serif";
+      ctx.fillStyle = "#9ca3af";
+      ctx.fillText("Time & Gravity · Cooperative Puzzle Platformer", WIDTH / 2, HEIGHT / 2 - 40);
+
+      ctx.textAlign = "left";
+    }
+
+    function updateMenu(dt) {
+      showCenterMessage(
+        "Main Menu",
+        "Choose an option.",
+        "Use number keys or Enter.",
+        [
+          { key: "1", label: "Start Level 1" },
+          { key: "2", label: "Start Level 2" },
+          { key: "3", label: "Start Level 3" },
+          { key: "L", label: "Level Select Screen" }
+        ]
+      );
+
+      if (consumeKeyOnce("Digit1")) {
+        hideCenterMessage();
+        loadLevel(0);
+        startTransition("gameplay");
+      } else if (consumeKeyOnce("Digit2")) {
+        hideCenterMessage();
+        loadLevel(1);
+        startTransition("gameplay");
+      } else if (consumeKeyOnce("Digit3")) {
+        hideCenterMessage();
+        loadLevel(2);
+        startTransition("gameplay");
+      } else if (consumeKeyOnce(InputMap.levelSelect)) {
+        hideCenterMessage();
+        startTransition("levelSelect");
+      }
+    }
+
+    function drawMenu() {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, WIDTH, HEIGHT);
+      drawBackgroundGrid();
+
+      ctx.fillStyle = "#bfdbfe";
+      ctx.font = "36px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("FluxBound Menu", WIDTH / 2, 120);
+
+      ctx.font = "18px sans-serif";
+      ctx.fillStyle = "#e5e7eb";
+      ctx.fillText("Press 1, 2, or 3 to start a level.", WIDTH / 2, 180);
+      ctx.textAlign = "left";
+    }
+
+    function updateLevelSelect(dt) {
+      let menuItems = LevelDefinitions.map((lvl, i) => ({
+        key: (i + 1).toString(),
+        label: `${lvl.id} - ${lvl.name}`
+      }));
+      menuItems.push({ key: "Esc", label: "Back to Menu" });
+
+      showCenterMessage(
+        "Level Select",
+        "Choose a level to start.",
+        "Press the corresponding number key.",
+        menuItems
+      );
+
+      for (let i = 0; i < LevelDefinitions.length; i++) {
+        const keyCode = "Digit" + (i + 1);
+        if (consumeKeyOnce(keyCode)) {
+          hideCenterMessage();
+          loadLevel(i);
+          startTransition("gameplay");
+          return;
+        }
+      }
+
+      if (consumeKeyOnce(InputMap.pause)) {
+        hideCenterMessage();
+        startTransition("menu");
+      }
+    }
+
+    function drawLevelSelect() {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, WIDTH, HEIGHT);
+      drawBackgroundGrid();
+
+      ctx.fillStyle = "#bfdbfe";
+      ctx.font = "32px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("Level Select", WIDTH / 2, 120);
+
+      ctx.textAlign = "left";
+    }
+
+    function updatePause(dt) {
+      showCenterMessage(
+        "Paused",
+        "Game is paused.",
+        "Press Esc to resume or M to go to menu.",
+        [
+          { key: "Esc", label: "Resume" },
+          { key: "M", label: "Return to Menu" }
+        ]
+      );
+
+      if (consumeKeyOnce(InputMap.pause)) {
+        hideCenterMessage();
+        setScene("gameplay");
+      } else if (consumeKeyOnce("KeyM")) {
+        hideCenterMessage();
+        startTransition("menu");
+      }
+    }
+
+    function drawPause() {
+      // Draw gameplay behind pause
+      drawGameplay(true);
+    }
+
+    /************************************************************
+     * GAMEPLAY LOGIC
+     ************************************************************/
+
+    function updateGameplay(dt) {
+      hideCenterMessage();
+
+      const tempoInput = {
+        left: keys[InputMap.tempoLeft],
+        right: keys[InputMap.tempoRight],
+        jump: keys[InputMap.tempoJump],
+        slow: keys[InputMap.tempoSlow]
+      };
+
+      const vectorInput = {
+        left: keys[InputMap.vectorLeft],
+        right: keys[InputMap.vectorRight],
+        jump: keys[InputMap.vectorJump],
+        flip: keys[InputMap.vectorFlip]
+      };
+
+      // Base time scale
+      let timeScale = GameState.baseTimeScale;
+
+      // Tempo modifies time scale
+      timeScale = GameState.tempo.getEffectiveTimeScale(timeScale);
+
+      // Update platforms
+      for (let p of GameState.platforms) {
+        p.update(timeScale);
+      }
+
+      // Update players
+      GameState.tempo.update(
+        tempoInput,
+        GameState.platforms,
+        GameState.gravityDirection,
+        timeScale,
+        dt
+      );
+
+      const flipped = GameState.vector.update(
+        vectorInput,
+        GameState.platforms,
+        GameState.gravityDirection,
+        timeScale,
+        dt
+      );
+
+      if (flipped) {
+        GameState.gravityDirection *= -1;
+      }
+
+      // Update portal
+      GameState.portal.update(timeScale);
+
+      // Camera follow
+      GameState.camera.follow([GameState.tempo.body, GameState.vector.body]);
+      GameState.camera.update();
+
+      // Check win condition
+      const tempoIn = GameState.portal.contains(GameState.tempo.body);
+      const vectorIn = GameState.portal.contains(GameState.vector.body);
+
+      if (tempoIn && vectorIn) {
+        const nextIndex = (GameState.currentLevelIndex + 1) % LevelDefinitions.length;
+        loadLevel(nextIndex);
+        startTransition("gameplay");
+      }
+
+      // Handle pause
+      if (consumeKeyOnce(InputMap.pause)) {
+        setScene("pause");
+      }
+
+      // Reset level
+      if (consumeKeyOnce(InputMap.reset)) {
+        loadLevel(GameState.currentLevelIndex);
+      }
+
+      // Level select
+      if (consumeKeyOnce(InputMap.levelSelect)) {
+        startTransition("levelSelect");
+      }
+
+      // HUD updates
+      hudTimeScale.textContent = timeScale.toFixed(2);
+      hudGravity.textContent = GameState.gravityDirection === 1 ? "Down" : "Up";
+
+      hudTempoCD.textContent =
+        GameState.tempo.slowCooldown > 0
+          ? (GameState.tempo.slowCooldown / 1000).toFixed(1) + "s"
+          : "Ready";
+
+      hudVectorCD.textContent =
+        GameState.vector.flipCooldown > 0
+          ? (GameState.vector.flipCooldown / 1000).toFixed(1) + "s"
+          : "Ready";
+    }
+
+    function drawBackgroundGrid() {
+      ctx.fillStyle = "#050814";
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      ctx.strokeStyle = "rgba(58,175,255,0.12)";
       ctx.lineWidth = 1;
+
       for (let x = 0; x < WIDTH; x += 40) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
@@ -329,42 +1007,110 @@
         ctx.stroke();
       }
 
-      // Gravity direction indicator
-      ctx.fillStyle = "#3af";
-      ctx.font = "14px sans-serif";
-      ctx.fillText("Gravity: " + (gravityDirection === 1 ? "Down" : "Up"), WIDTH - 140, 24);
-      ctx.fillText("Time: " + (timeScale < 1 ? "Slowed" : "Normal"), WIDTH - 140, 44);
+      // Dimensional glow
+      ctx.fillStyle = "rgba(59,130,246,0.15)";
+      ctx.beginPath();
+      ctx.arc(WIDTH / 2, 0, 260, 0, Math.PI * 2);
+      ctx.fill();
     }
 
-    function render() {
-      drawBackground();
+    function drawGameplay(pausedOverlay = false) {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+      drawBackgroundGrid();
+
+      GameState.camera.applyTransform();
 
       // Draw platforms
-      for (let p of platforms) {
+      for (let p of GameState.platforms) {
         p.draw();
       }
 
       // Draw portal
-      portal.draw();
+      GameState.portal.draw();
 
       // Draw players
-      tempo.draw();
-      vector.draw();
+      GameState.tempo.draw();
+      GameState.vector.draw();
 
-      // Player labels
-      ctx.fillStyle = "#fff";
-      ctx.font = "12px sans-serif";
-      ctx.fillText("Tempo", tempo.x, tempo.y - 6);
-      ctx.fillText("Vector", vector.x, vector.y - 6);
+      GameState.camera.resetTransform();
+
+      if (pausedOverlay) {
+        ctx.fillStyle = "rgba(0,0,0,0.5)";
+        ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+        ctx.fillStyle = "#bfdbfe";
+        ctx.font = "32px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Paused", WIDTH / 2, HEIGHT / 2 - 40);
+
+        ctx.font = "18px sans-serif";
+        ctx.fillStyle = "#e5e7eb";
+        ctx.fillText("Press Esc to resume · Press M to return to menu", WIDTH / 2, HEIGHT / 2);
+        ctx.textAlign = "left";
+      }
     }
 
+    /************************************************************
+     * MAIN LOOP
+     ************************************************************/
+
     function gameLoop() {
-      update();
-      render();
+      const currentTime = now();
+      const dt = currentTime; // we use absolute time for cooldowns
+
+      // Update
+      switch (GameState.currentScene) {
+        case "splash":
+          updateSplash(dt);
+          break;
+        case "menu":
+          updateMenu(dt);
+          break;
+        case "levelSelect":
+          updateLevelSelect(dt);
+          break;
+        case "gameplay":
+          updateGameplay(dt);
+          break;
+        case "pause":
+          updatePause(dt);
+          break;
+      }
+
+      // Draw
+      switch (GameState.currentScene) {
+        case "splash":
+          drawSplash();
+          break;
+        case "menu":
+          drawMenu();
+          break;
+        case "levelSelect":
+          drawLevelSelect();
+          break;
+        case "gameplay":
+          drawGameplay(false);
+          break;
+        case "pause":
+          drawPause();
+          break;
+      }
+
       requestAnimationFrame(gameLoop);
     }
 
-    gameLoop();
+    /************************************************************
+     * INIT
+     ************************************************************/
+
+    function init() {
+      setScene("splash");
+      gameLoop();
+    }
+
+    init();
   </script>
 </body>
 </html>
