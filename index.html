@@ -2,144 +2,1764 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Student Task + Study Planner</title>
+<title>Study Planner – GitHub Edition</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-    body { font-family: Arial; margin: 0; padding: 0; background: #f5f5f5; }
-    header { background: #4a6cf7; padding: 15px; color: white; text-align: center; }
-    section { padding: 20px; }
-    input, select { padding: 8px; margin: 5px; }
-    button { padding: 10px 15px; background: #4a6cf7; color: white; border: none; cursor: pointer; }
-    .task { background: white; padding: 10px; margin: 10px 0; border-radius: 6px; }
-    .calendar-day { border: 1px solid #ccc; padding: 10px; width: 120px; height: 120px; overflow-y: auto; }
-    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
-    .study-block { background: #fff; padding: 10px; margin: 10px 0; border-left: 4px solid #4a6cf7; }
+/* ========== GLOBAL ========== */
+:root {
+    --bg: #0b1020;
+    --bg-alt: #111827;
+    --card: #1f2937;
+    --accent: #4f46e5;
+    --accent-soft: #6366f1;
+    --accent-light: #a5b4fc;
+    --text: #e5e7eb;
+    --muted: #9ca3af;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --warning: #f97316;
+    --border: #374151;
+    --radius-lg: 14px;
+    --radius-md: 10px;
+    --radius-sm: 6px;
+    --shadow-soft: 0 10px 25px rgba(0,0,0,0.35);
+    --font-main: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-main);
+    background: radial-gradient(circle at top, #1f2937 0, #020617 55%, #000 100%);
+    color: var(--text);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #020617; }
+::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+/* ========== APP SHELL ========== */
+.app-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Header */
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 22px;
+    background: rgba(15,23,42,0.95);
+    border-bottom: 1px solid rgba(55,65,81,0.7);
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.app-title-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.app-logo {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    background: radial-gradient(circle at 30% 30%, #a5b4fc 0, #4f46e5 40%, #111827 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 2px rgba(129,140,248,0.4);
+    font-weight: 700;
+    font-size: 18px;
+    color: #e5e7eb;
+}
+
+.app-title-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.app-title-text h1 {
+    margin: 0;
+    font-size: 20px;
+    letter-spacing: 0.03em;
+}
+
+.app-title-text span {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.app-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-pill {
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(148,163,184,0.5);
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.header-pill-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--success);
+    box-shadow: 0 0 0 4px rgba(34,197,94,0.25);
+}
+
+.header-button {
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(129,140,248,0.7);
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    color: #e5e7eb;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 10px 20px rgba(79,70,229,0.35);
+    transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, filter 0.15s ease-out;
+}
+
+.header-button:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.05);
+    box-shadow: 0 14px 28px rgba(79,70,229,0.45);
+}
+
+.header-button-icon { font-size: 14px; }
+
+/* ========== MAIN LAYOUT ========== */
+.app-main {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    min-height: calc(100vh - 60px);
+}
+
+/* Sidebar */
+.app-sidebar {
+    background: rgba(15,23,42,0.95);
+    border-right: 1px solid rgba(55,65,81,0.7);
+    padding: 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.sidebar-section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-bottom: 6px;
+}
+
+.nav-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.nav-item {
+    border-radius: 999px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.15s ease-out, border-color 0.15s ease-out, color 0.15s ease-out, transform 0.15s ease-out;
+}
+
+.nav-item-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background: rgba(31,41,55,0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.nav-item.active {
+    background: radial-gradient(circle at 0 0, rgba(129,140,248,0.35), rgba(15,23,42,0.95));
+    border-color: rgba(129,140,248,0.8);
+    color: #e5e7eb;
+    transform: translateX(2px);
+}
+
+.nav-item:hover {
+    background: rgba(31,41,55,0.9);
+    color: #e5e7eb;
+}
+
+/* Sidebar stats */
+.sidebar-stats {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: var(--radius-md);
+    border: 1px dashed rgba(75,85,99,0.8);
+    background: radial-gradient(circle at 0 0, rgba(79,70,229,0.25), rgba(15,23,42,0.95));
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.sidebar-stat-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.sidebar-stat-label { color: var(--muted); }
+.sidebar-stat-value { color: var(--accent-light); }
+
+.sidebar-footer {
+    margin-top: auto;
+    font-size: 11px;
+    color: var(--muted);
+    border-top: 1px solid rgba(55,65,81,0.7);
+    padding-top: 10px;
+}
+
+/* Content */
+.app-content {
+    padding: 18px 20px 24px;
+    overflow-y: auto;
+}
+
+.content-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.content-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.content-title-group h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.content-title-group span {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.content-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chip {
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(75,85,99,0.9);
+    font-size: 11px;
+    color: var(--muted);
+}
+
+/* Grids */
+.grid-2 {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 16px;
+}
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+.grid-1 {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+}
+
+/* Card */
+.card {
+    background: rgba(15,23,42,0.96);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(55,65,81,0.9);
+    box-shadow: var(--shadow-soft);
+    padding: 14px 14px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.card-title {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.card-subtitle {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.card-header-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Form */
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.form-row-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.form-row-4 {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--muted);
+}
+
+input[type="text"],
+input[type="date"],
+input[type="time"],
+input[type="number"],
+select,
+textarea {
+    background: #020617;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(55,65,81,0.9);
+    padding: 7px 8px;
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out, background 0.15s ease-out;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 60px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: rgba(129,140,248,0.9);
+    box-shadow: 0 0 0 1px rgba(129,140,248,0.7);
+    background: #020617;
+}
+
+/* Buttons */
+.btn {
+    border-radius: 999px;
+    border: 1px solid rgba(75,85,99,0.9);
+    background: #020617;
+    color: var(--text);
+    font-size: 12px;
+    padding: 7px 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s ease-out, border-color 0.15s ease-out, transform 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+
+.btn-primary {
+    border-color: rgba(129,140,248,0.9);
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    box-shadow: 0 10px 20px rgba(79,70,229,0.35);
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(79,70,229,0.45);
+}
+
+.btn-outline {
+    background: transparent;
+}
+
+.btn-outline:hover {
+    background: rgba(31,41,55,0.9);
+}
+
+.btn-danger {
+    border-color: rgba(239,68,68,0.9);
+    color: var(--danger);
+}
+
+.btn-sm {
+    padding: 4px 8px;
+    font-size: 11px;
+}
+
+/* Badges */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    border: 1px solid rgba(75,85,99,0.9);
+    color: var(--muted);
+}
+
+.badge-critical { border-color: rgba(239,68,68,0.9); color: var(--danger); }
+.badge-high     { border-color: rgba(249,115,22,0.9); color: var(--warning); }
+.badge-medium   { border-color: rgba(59,130,246,0.9); color: #60a5fa; }
+.badge-low      { border-color: rgba(34,197,94,0.9); color: var(--success); }
+.badge-status   { border-color: rgba(75,85,99,0.9); }
+
+/* Task list */
+.task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 260px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.task-item {
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(55,65,81,0.9);
+    background: radial-gradient(circle at 0 0, rgba(31,41,55,0.9), rgba(15,23,42,0.96));
+    padding: 8px 9px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.8fr) minmax(0, 1.2fr) auto;
+    gap: 8px;
+    align-items: center;
+    font-size: 12px;
+}
+
+.task-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.task-title { font-weight: 600; }
+
+.task-meta {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.task-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.task-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-end;
+}
+
+/* Filter bar */
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 6px;
+    font-size: 11px;
+}
+
+.filter-bar select { min-width: 120px; }
+
+/* Calendar */
+.calendar-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+    font-size: 11px;
+}
+
+.calendar-day {
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(55,65,81,0.9);
+    background: #020617;
+    min-height: 90px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.calendar-day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.calendar-day-number {
+    font-weight: 600;
+    color: var(--accent-light);
+}
+
+.calendar-day-tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    max-height: 70px;
+    overflow-y: auto;
+}
+
+.calendar-task-pill {
+    border-radius: 999px;
+    padding: 2px 6px;
+    font-size: 10px;
+    border: 1px solid rgba(75,85,99,0.9);
+    color: var(--muted);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+/* Study planner */
+.study-planner {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.study-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 220px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.study-block {
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(55,65,81,0.9);
+    background: radial-gradient(circle at 0 0, rgba(79,70,229,0.25), rgba(15,23,42,0.96));
+    padding: 7px 9px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.2fr) auto;
+    gap: 6px;
+    align-items: center;
+    font-size: 12px;
+}
+
+.study-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.study-meta {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.study-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-end;
+}
+
+/* Weekly timetable */
+.timetable-grid {
+    display: grid;
+    grid-template-columns: 80px repeat(7, minmax(0, 1fr));
+    gap: 4px;
+    font-size: 11px;
+}
+
+.timetable-header-cell {
+    padding: 6px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(55,65,81,0.9);
+    background: #020617;
+    text-align: center;
+    color: var(--muted);
+}
+
+.timetable-time-cell {
+    padding: 6px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(55,65,81,0.9);
+    background: #020617;
+    text-align: right;
+    color: var(--muted);
+}
+
+.timetable-slot {
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(31,41,55,0.9);
+    background: rgba(15,23,42,0.96);
+    min-height: 32px;
+    position: relative;
+    overflow: hidden;
+}
+
+.timetable-slot-content {
+    font-size: 10px;
+    color: var(--muted);
+}
+
+/* Responsive */
+@media (max-width: 960px) {
+    .app-main { grid-template-columns: 220px minmax(0, 1fr); }
+    .grid-2 { grid-template-columns: minmax(0, 1fr); }
+    .grid-3 { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 720px) {
+    .app-main { grid-template-columns: minmax(0, 1fr); }
+    .app-sidebar { display: none; }
+    .content-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
+
+/* Utils */
+.text-muted { color: var(--muted); }
+.mt-4 { margin-top: 4px; }
+.mt-8 { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
 </style>
 </head>
 <body>
 
-<header>
-    <h1>Student Task Manager + Study Planner</h1>
-</header>
+<div class="app-shell">
+    <header class="app-header">
+        <div class="app-title-group">
+            <div class="app-logo">SP</div>
+            <div class="app-title-text">
+                <h1>Study Planner</h1>
+                <span>Tasks · Calendar · Priority · Study Planner · Timetable</span>
+            </div>
+        </div>
+        <div class="app-header-actions">
+            <div class="header-pill">
+                <div class="header-pill-dot"></div>
+                <span>Local mode · Saved in this browser</span>
+            </div>
+            <button class="header-button" id="btnExport">
+                <span class="header-button-icon">⬇️</span>
+                <span>Export backup</span>
+            </button>
+            <button class="header-button" id="btnImport">
+                <span class="header-button-icon">⬆️</span>
+                <span>Import backup</span>
+            </button>
+        </div>
+    </header>
 
-<section>
-    <h2>Add Task</h2>
-    <input id="title" placeholder="Task Title">
-    <input id="subject" placeholder="Subject">
-    <input id="due" type="date">
-    <select id="priority">
-        <option value="Critical">Critical</option>
-        <option value="High">High</option>
-        <option value="Medium">Medium</option>
-        <option value="Low">Low</option>
-    </select>
-    <button onclick="addTask()">Add Task</button>
-</section>
+    <div class="app-main">
+        <!-- Sidebar -->
+        <aside class="app-sidebar">
+            <div>
+                <div class="sidebar-section-title">Views</div>
+                <ul class="nav-list">
+                    <li class="nav-item active" data-view="dashboard">
+                        <div class="nav-item-icon">🏠</div>
+                        <span>Dashboard</span>
+                    </li>
+                    <li class="nav-item" data-view="tasks">
+                        <div class="nav-item-icon">📝</div>
+                        <span>Tasks & Priority</span>
+                    </li>
+                    <li class="nav-item" data-view="calendar">
+                        <div class="nav-item-icon">📅</div>
+                        <span>Calendar</span>
+                    </li>
+                    <li class="nav-item" data-view="study">
+                        <div class="nav-item-icon">📚</div>
+                        <span>Study Planner</span>
+                    </li>
+                    <li class="nav-item" data-view="timetable">
+                        <div class="nav-item-icon">🧭</div>
+                        <span>Weekly Timetable</span>
+                    </li>
+                </ul>
+            </div>
 
-<section>
-    <h2>Priority List</h2>
-    <div id="priorityList"></div>
-</section>
+            <div class="sidebar-stats">
+                <div class="sidebar-stat-row">
+                    <span class="sidebar-stat-label">Total tasks</span>
+                    <span class="sidebar-stat-value" id="statTotalTasks">0</span>
+                </div>
+                <div class="sidebar-stat-row">
+                    <span class="sidebar-stat-label">Critical / High</span>
+                    <span class="sidebar-stat-value" id="statHighPriority">0</span>
+                </div>
+                <div class="sidebar-stat-row">
+                    <span class="sidebar-stat-label">Due today</span>
+                    <span class="sidebar-stat-value" id="statDueToday">0</span>
+                </div>
+                <div class="sidebar-stat-row">
+                    <span class="sidebar-stat-label">Study blocks</span>
+                    <span class="sidebar-stat-value" id="statStudyBlocks">0</span>
+                </div>
+            </div>
 
-<section>
-    <h2>Calendar</h2>
-    <div id="calendar" class="calendar"></div>
-</section>
+            <div class="sidebar-footer">
+                <div>Use this as your “brain dump” for school tasks.</div>
+                <div class="mt-4">Drop this file into GitHub Pages and it becomes your web app.</div>
+            </div>
+        </aside>
 
-<section>
-    <h2>Study Planner (Daily)</h2>
-    <input id="studySubject" placeholder="Subject">
-    <input id="studyTime" type="time">
-    <button onclick="addStudy()">Add Study Block</button>
-    <div id="studyList"></div>
-</section>
+        <!-- Content -->
+        <main class="app-content">
+            <!-- Dashboard -->
+            <section id="view-dashboard">
+                <div class="content-header">
+                    <div class="content-title-group">
+                        <h2>Dashboard</h2>
+                        <span>Quick overview of tasks and today’s study plan.</span>
+                    </div>
+                    <div class="content-header-actions">
+                        <div class="chip" id="chipToday"></div>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Add task</div>
+                                <div class="card-subtitle">Assignments, homework, projects, exams.</div>
+                            </div>
+                            <div class="card-header-right">
+                                <button class="btn btn-outline btn-sm" id="btnClearTasks">Clear all tasks</button>
+                            </div>
+                        </div>
+
+                        <div class="form-row-4">
+                            <div class="form-field">
+                                <label>Title</label>
+                                <input type="text" id="taskTitle" placeholder="e.g. Maths homework set 5">
+                            </div>
+                            <div class="form-field">
+                                <label>Subject</label>
+                                <input type="text" id="taskSubject" placeholder="e.g. Mathematics">
+                            </div>
+                            <div class="form-field">
+                                <label>Due date</label>
+                                <input type="date" id="taskDue">
+                            </div>
+                            <div class="form-field">
+                                <label>Priority</label>
+                                <select id="taskPriority">
+                                    <option value="Critical">Critical</option>
+                                    <option value="High">High</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="Low">Low</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row-3">
+                            <div class="form-field">
+                                <label>Status</label>
+                                <select id="taskStatus">
+                                    <option value="Not started">Not started</option>
+                                    <option value="In progress">In progress</option>
+                                    <option value="Completed">Completed</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label>Estimated time (minutes)</label>
+                                <input type="number" id="taskEstimate" min="0" placeholder="e.g. 45">
+                            </div>
+                            <div class="form-field">
+                                <label>Notes</label>
+                                <input type="text" id="taskNotes" placeholder="Optional notes">
+                            </div>
+                        </div>
+
+                        <div>
+                            <button class="btn btn-primary" id="btnAddTask">
+                                <span>➕</span>
+                                <span>Add task</span>
+                            </button>
+                        </div>
+
+                        <div class="mt-8">
+                            <div class="card-subtitle">Priority list (auto‑sorted)</div>
+                            <div class="filter-bar">
+                                <div class="form-field" style="flex: 1;">
+                                    <label>Filter by subject</label>
+                                    <select id="filterSubject">
+                                        <option value="">All subjects</option>
+                                    </select>
+                                </div>
+                                <div class="form-field">
+                                    <label>Filter by priority</label>
+                                    <select id="filterPriority">
+                                        <option value="">All</option>
+                                        <option value="Critical">Critical</option>
+                                        <option value="High">High</option>
+                                        <option value="Medium">Medium</option>
+                                        <option value="Low">Low</option>
+                                    </select>
+                                </div>
+                                <div class="form-field">
+                                    <label>Filter by status</label>
+                                    <select id="filterStatus">
+                                        <option value="">All</option>
+                                        <option value="Not started">Not started</option>
+                                        <option value="In progress">In progress</option>
+                                        <option value="Completed">Completed</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="task-list" id="taskList"></div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Today overview</div>
+                                <div class="card-subtitle">Tasks due today + today’s study blocks.</div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <div class="card-subtitle">Tasks due today</div>
+                            <div class="task-list" id="taskListToday"></div>
+                        </div>
+
+                        <div class="mt-8">
+                            <div class="card-subtitle">Today’s study blocks</div>
+                            <div class="study-list" id="studyListToday"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tasks view -->
+            <section id="view-tasks" style="display:none;">
+                <div class="content-header">
+                    <div class="content-title-group">
+                        <h2>Tasks & Priority</h2>
+                        <span>Manage tasks, sort by priority, track progress.</span>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">All tasks</div>
+                                <div class="card-subtitle">Sorted by priority (Critical → Low).</div>
+                            </div>
+                            <div class="card-header-right">
+                                <button class="btn btn-outline btn-sm" id="btnMarkAllCompleted">Mark all completed</button>
+                            </div>
+                        </div>
+
+                        <div class="filter-bar">
+                            <div class="form-field" style="flex: 1;">
+                                <label>Filter by subject</label>
+                                <select id="filterSubjectTasks">
+                                    <option value="">All subjects</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label>Filter by priority</label>
+                                <select id="filterPriorityTasks">
+                                    <option value="">All</option>
+                                    <option value="Critical">Critical</option>
+                                    <option value="High">High</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="Low">Low</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label>Filter by status</label>
+                                <select id="filterStatusTasks">
+                                    <option value="">All</option>
+                                    <option value="Not started">Not started</option>
+                                    <option value="In progress">In progress</option>
+                                    <option value="Completed">Completed</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="task-list" id="taskListAll"></div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Priority breakdown</div>
+                                <div class="card-subtitle">How many tasks in each band.</div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <div class="sidebar-stat-row">
+                                <span class="sidebar-stat-label">Critical</span>
+                                <span class="sidebar-stat-value" id="statCritical">0</span>
+                            </div>
+                            <div class="sidebar-stat-row">
+                                <span class="sidebar-stat-label">High</span>
+                                <span class="sidebar-stat-value" id="statHigh">0</span>
+                            </div>
+                            <div class="sidebar-stat-row">
+                                <span class="sidebar-stat-label">Medium</span>
+                                <span class="sidebar-stat-value" id="statMedium">0</span>
+                            </div>
+                            <div class="sidebar-stat-row">
+                                <span class="sidebar-stat-label">Low</span>
+                                <span class="sidebar-stat-value" id="statLow">0</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-12 card-subtitle">
+                            Use Critical/High for things that will actually hurt your grade if you miss them.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Calendar view -->
+            <section id="view-calendar" style="display:none;">
+                <div class="content-header">
+                    <div class="content-title-group">
+                        <h2>Calendar</h2>
+                        <span>Tasks mapped onto a monthly calendar.</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="calendar-container">
+                        <div class="calendar-header">
+                            <div>
+                                <div class="card-title" id="calendarTitle"></div>
+                                <div class="card-subtitle">Tasks appear on their due dates.</div>
+                            </div>
+                            <div class="card-header-right">
+                                <button class="btn btn-outline btn-sm" id="btnPrevMonth">◀ Prev</button>
+                                <button class="btn btn-outline btn-sm" id="btnNextMonth">Next ▶</button>
+                                <button class="btn btn-outline btn-sm" id="btnTodayMonth">Today</button>
+                            </div>
+                        </div>
+
+                        <div class="calendar-grid" id="calendarGrid"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Study planner -->
+            <section id="view-study" style="display:none;">
+                <div class="content-header">
+                    <div class="content-title-group">
+                        <h2>Study Planner</h2>
+                        <span>Plan your day with study blocks linked to tasks.</span>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Add study block</div>
+                                <div class="card-subtitle">Focused sessions for subjects or tasks.</div>
+                            </div>
+                            <div class="card-header-right">
+                                <button class="btn btn-outline btn-sm" id="btnClearStudy">Clear all study blocks</button>
+                            </div>
+                        </div>
+
+                        <div class="form-row-3">
+                            <div class="form-field">
+                                <label>Subject / focus</label>
+                                <input type="text" id="studySubject" placeholder="e.g. Chemistry revision">
+                            </div>
+                            <div class="form-field">
+                                <label>Linked task (optional)</label>
+                                <select id="studyLinkedTask">
+                                    <option value="">None</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label>Date</label>
+                                <input type="date" id="studyDate">
+                            </div>
+                        </div>
+
+                        <div class="form-row-3">
+                            <div class="form-field">
+                                <label>Start time</label>
+                                <input type="time" id="studyStart">
+                            </div>
+                            <div class="form-field">
+                                <label>End time</label>
+                                <input type="time" id="studyEnd">
+                            </div>
+                            <div class="form-field">
+                                <label>Location / notes</label>
+                                <input type="text" id="studyNotes" placeholder="e.g. Library, past papers">
+                            </div>
+                        </div>
+
+                        <div>
+                            <button class="btn btn-primary" id="btnAddStudy">
+                                <span>➕</span>
+                                <span>Add study block</span>
+                            </button>
+                        </div>
+
+                        <div class="mt-8">
+                            <div class="card-subtitle">All study blocks</div>
+                            <div class="study-list" id="studyListAll"></div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Daily study view</div>
+                                <div class="card-subtitle">Pick a date to see its plan.</div>
+                            </div>
+                        </div>
+
+                        <div class="form-row-2">
+                            <div class="form-field">
+                                <label>View date</label>
+                                <input type="date" id="studyViewDate">
+                            </div>
+                            <div class="form-field">
+                                <label></label>
+                                <button class="btn btn-outline" id="btnTodayStudy">Jump to today</button>
+                            </div>
+                        </div>
+
+                        <div class="study-list" id="studyListByDate"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Timetable -->
+            <section id="view-timetable" style="display:none;">
+                <div class="content-header">
+                    <div class="content-title-group">
+                        <h2>Weekly Timetable</h2>
+                        <span>Week as a grid of time slots.</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">Timetable (from study blocks)</div>
+                            <div class="card-subtitle">Each block appears in the right day/time slot.</div>
+                        </div>
+                    </div>
+
+                    <div class="timetable-grid" id="timetableGrid"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
 
 <script>
-let tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
-let study = JSON.parse(localStorage.getItem("study") || "[]");
+/* ========== DATA & STORAGE ========== */
+const STORAGE_KEY = "studyPlanner_v1";
 
-function save() {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-    localStorage.setItem("study", JSON.stringify(study));
-}
+let state = {
+    tasks: [],
+    studyBlocks: [],
+    calendarMonthOffset: 0
+};
 
-function addTask() {
-    const t = {
-        title: title.value,
-        subject: subject.value,
-        due: due.value,
-        priority: priority.value
-    };
-    tasks.push(t);
-    save();
-    renderTasks();
-    renderCalendar();
-}
-
-function renderTasks() {
-    const container = document.getElementById("priorityList");
-    container.innerHTML = "";
-
-    const sorted = [...tasks].sort((a,b) => {
-        const order = ["Critical","High","Medium","Low"];
-        return order.indexOf(a.priority) - order.indexOf(b.priority);
-    });
-
-    sorted.forEach(task => {
-        const div = document.createElement("div");
-        div.className = "task";
-        div.innerHTML = `<strong>${task.title}</strong><br>
-                         ${task.subject}<br>
-                         Due: ${task.due}<br>
-                         Priority: ${task.priority}`;
-        container.appendChild(div);
-    });
-}
-
-function renderCalendar() {
-    const cal = document.getElementById("calendar");
-    cal.innerHTML = "";
-
-    for (let i = 1; i <= 30; i++) {
-        const day = document.createElement("div");
-        day.className = "calendar-day";
-        day.innerHTML = `<strong>Day ${i}</strong><br>`;
-        
-        tasks.forEach(task => {
-            const d = new Date(task.due).getDate();
-            if (d === i) {
-                day.innerHTML += `<div>${task.title}</div>`;
-            }
-        });
-
-        cal.appendChild(day);
+function loadState() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.tasks)) state.tasks = parsed.tasks;
+        if (Array.isArray(parsed.studyBlocks)) state.studyBlocks = parsed.studyBlocks;
+    } catch (e) {
+        console.error("Load error", e);
     }
 }
 
-function addStudy() {
-    const block = {
-        subject: studySubject.value,
-        time: studyTime.value
-    };
-    study.push(block);
-    save();
-    renderStudy();
+function saveState() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+        console.error("Save error", e);
+    }
 }
 
-function renderStudy() {
-    const list = document.getElementById("studyList");
-    list.innerHTML = "";
-    study.forEach(s => {
-        const div = document.createElement("div");
-        div.className = "study-block";
-        div.innerHTML = `<strong>${s.subject}</strong><br>Time: ${s.time}`;
-        list.appendChild(div);
+/* ========== UTIL ========== */
+function todayISO() {
+    const d = new Date();
+    return d.toISOString().slice(0,10);
+}
+
+function formatDateHuman(iso) {
+    if (!iso) return "";
+    const d = new Date(iso + "T00:00:00");
+    return d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+}
+
+function compareDateOnly(a, b) {
+    return new Date(a + "T00:00:00") - new Date(b + "T00:00:00");
+}
+
+function getPriorityOrder(p) {
+    const order = { Critical: 0, High: 1, Medium: 2, Low: 3 };
+    return order[p] ?? 99;
+}
+
+function generateId(prefix) {
+    return prefix + "_" + Math.random().toString(36).slice(2,10);
+}
+
+function $(id) { return document.getElementById(id); }
+
+/* ========== NAV ========== */
+const navItems = document.querySelectorAll(".nav-item");
+const views = {
+    dashboard: $("view-dashboard"),
+    tasks: $("view-tasks"),
+    calendar: $("view-calendar"),
+    study: $("view-study"),
+    timetable: $("view-timetable")
+};
+
+navItems.forEach(item => {
+    item.addEventListener("click", () => {
+        const view = item.getAttribute("data-view");
+        navItems.forEach(i => i.classList.remove("active"));
+        item.classList.add("active");
+        Object.keys(views).forEach(k => {
+            views[k].style.display = (k === view) ? "block" : "none";
+        });
+        renderAll();
+    });
+});
+
+/* ========== TASKS: ADD ========== */
+$("btnAddTask").addEventListener("click", () => {
+    const title = $("taskTitle").value.trim();
+    const subject = $("taskSubject").value.trim();
+    const due = $("taskDue").value;
+    const priority = $("taskPriority").value;
+    const status = $("taskStatus").value;
+    const estimate = parseInt($("taskEstimate").value || "0", 10);
+    const notes = $("taskNotes").value.trim();
+
+    if (!title || !subject || !due) {
+        alert("Fill in title, subject, and due date.");
+        return;
+    }
+
+    const task = {
+        id: generateId("task"),
+        title,
+        subject,
+        due,
+        priority,
+        status,
+        estimate,
+        notes
+    };
+
+    state.tasks.push(task);
+    saveState();
+    clearTaskInputs();
+    renderAll();
+});
+
+function clearTaskInputs() {
+    $("taskTitle").value = "";
+    $("taskSubject").value = "";
+    $("taskDue").value = "";
+    $("taskPriority").value = "Critical";
+    $("taskStatus").value = "Not started";
+    $("taskEstimate").value = "";
+    $("taskNotes").value = "";
+}
+
+$("btnClearTasks").addEventListener("click", () => {
+    if (!confirm("Clear ALL tasks?")) return;
+    state.tasks = [];
+    saveState();
+    renderAll();
+});
+
+$("btnMarkAllCompleted").addEventListener("click", () => {
+    state.tasks.forEach(t => t.status = "Completed");
+    saveState();
+    renderAll();
+});
+
+/* ========== TASK FILTERS ========== */
+function getTaskFilters(prefix) {
+    const subject = $(prefix + "Subject")?.value || "";
+    const priority = $(prefix + "Priority")?.value || "";
+    const status = $(prefix + "Status")?.value || "";
+    return { subject, priority, status };
+}
+
+function filterTasks(tasks, filters) {
+    return tasks.filter(t => {
+        if (filters.subject && t.subject !== filters.subject) return false;
+        if (filters.priority && t.priority !== filters.priority) return false;
+        if (filters.status && t.status !== filters.status) return false;
+        return true;
     });
 }
 
-renderTasks();
-renderCalendar();
-renderStudy();
-</script>
+/* ========== TASK RENDERING ========== */
+function createEl(tag, className, text) {
+    const el = document.createElement(tag);
+    if (className) el.className = className;
+    if (text !== undefined) el.textContent = text;
+    return el;
+}
 
+function getPriorityBadgeClass(priority) {
+    switch (priority) {
+        case "Critical": return "badge-critical";
+        case "High": return "badge-high";
+        case "Medium": return "badge-medium";
+        case "Low": return "badge-low";
+        default: return "";
+    }
+}
+
+function renderTaskList(containerId, tasks) {
+    const container = $(containerId);
+    container.innerHTML = "";
+
+    if (!tasks.length) {
+        container.appendChild(createEl("div", "card-subtitle text-muted", "No tasks here yet."));
+        return;
+    }
+
+    tasks.forEach(task => {
+        const item = createEl("div", "task-item");
+
+        const main = createEl("div", "task-main");
+        main.appendChild(createEl("div", "task-title", task.title));
+        main.appendChild(createEl("div", "task-meta",
+            `${task.subject} · Due ${formatDateHuman(task.due)} · Est. ${task.estimate || 0} min`
+        ));
+
+        if (task.notes) {
+            main.appendChild(createEl("div", "task-meta", "Notes: " + task.notes));
+        }
+
+        const tags = createEl("div", "task-tags");
+        const badgePriority = createEl("span", "badge " + getPriorityBadgeClass(task.priority), task.priority);
+        const badgeStatus = createEl("span", "badge badge-status", task.status);
+        tags.appendChild(badgePriority);
+        tags.appendChild(badgeStatus);
+        main.appendChild(tags);
+
+        const middle = createEl("div");
+        middle.appendChild(createEl("div", "task-meta", "Due: " + formatDateHuman(task.due)));
+
+        const actions = createEl("div", "task-actions");
+        const btnStart = createEl("button", "btn btn-outline btn-sm", "Start");
+        const btnComplete = createEl("button", "btn btn-outline btn-sm", "Complete");
+        const btnDelete = createEl("button", "btn btn-danger btn-sm", "Delete");
+
+        btnStart.addEventListener("click", () => {
+            task.status = "In progress";
+            saveState();
+            renderAll();
+        });
+
+        btnComplete.addEventListener("click", () => {
+            task.status = "Completed";
+            saveState();
+            renderAll();
+        });
+
+        btnDelete.addEventListener("click", () => {
+            if (!confirm("Delete this task?")) return;
+            state.tasks = state.tasks.filter(t => t.id !== task.id);
+            saveState();
+            renderAll();
+        });
+
+        actions.appendChild(btnStart);
+        actions.appendChild(btnComplete);
+        actions.appendChild(btnDelete);
+
+        item.appendChild(main);
+        item.appendChild(middle);
+        item.appendChild(actions);
+
+        container.appendChild(item);
+    });
+}
+
+/* ========== SIDEBAR STATS ========== */
+function renderSidebarStats() {
+    $("statTotalTasks").textContent = state.tasks.length;
+    $("statHighPriority").textContent = state.tasks.filter(t =>
+        t.priority === "Critical" || t.priority === "High"
+    ).length;
+    $("statDueToday").textContent = state.tasks.filter(t => t.due === todayISO()).length;
+    $("statStudyBlocks").textContent = state.studyBlocks.length;
+}
+
+/* ========== SUBJECT FILTER OPTIONS ========== */
+function renderSubjectFilters() {
+    const subjects = Array.from(new Set(state.tasks.map(t => t.subject))).sort();
+    const selects = [$("filterSubject"), $("filterSubjectTasks")];
+
+    selects.forEach(sel => {
+        if (!sel) return;
+        const current = sel.value;
+        sel.innerHTML = "";
+        const optAll = document.createElement("option");
+        optAll.value = "";
+        optAll.textContent = "All subjects";
+        sel.appendChild(optAll);
+
+        subjects.forEach(sub => {
+            const opt = document.createElement("option");
+            opt.value = sub;
+            opt.textContent = sub;
+            sel.appendChild(opt);
+        });
+
+        if (subjects.includes(current)) sel.value = current;
+    });
+}
+
+/* ========== LINKED TASK OPTIONS (STUDY) ========== */
+function renderLinkedTaskOptions() {
+    const sel = $("studyLinkedTask");
+    const current = sel.value;
+    sel.innerHTML = "";
+    const optNone = document.createElement("option");
+    optNone.value = "";
+    optNone.textContent = "None";
+    sel.appendChild(optNone);
+
+    state.tasks.forEach(t => {
+        const opt = document.createElement("option");
+        opt.value = t.id;
+        opt.textContent = `${t.title} (${t.subject})`;
+        sel.appendChild(opt);
+    });
+
+    if (state.tasks.some(t => t.id === current)) sel.value = current;
+}
+
+/* ========== DASHBOARD RENDER ========== */
+function renderDashboard() {
+    $("chipToday").textContent = "Today · " + formatDateHuman(todayISO());
+
+    const filters = {
+        subject: $("filterSubject").value || "",
+        priority: $("filterPriority").value || "",
+        status: $("filterStatus").value || ""
+    };
+
+    const sorted = [...state.tasks].sort((a, b) => {
+        const p = getPriorityOrder(a.priority) - getPriorityOrder(b.priority);
+        if (p !== 0) return p;
+        return compareDateOnly(a.due, b.due);
+    });
+
+    renderTaskList("taskList", filterTasks(sorted, filters));
+
+    const todayTasks = state.tasks.filter(t => t.due === todayISO());
+    renderTaskList("taskListToday", todayTasks);
+
+    const todayStudy = state.studyBlocks.filter(b => b.date === todayISO());
+    renderStudyList("studyListToday", todayStudy);
+}
+
+/* ========== TASKS VIEW RENDER ========== */
+function renderTasksView() {
+    const filters = {
+        subject: $("filterSubjectTasks").value || "",
+        priority: $("filterPriorityTasks").value || "",
+        status: $("filterStatusTasks").value || ""
+    };
+
+    const sorted = [...state.tasks].sort((a, b) => {
+        const p = getPriorityOrder(a.priority) - getPriorityOrder(b.priority);
+        if (p !== 0) return p;
+        return compareDateOnly(a.due, b.due);
+    });
+
+    renderTaskList("taskListAll", filterTasks(sorted, filters));
+
+    $("statCritical").textContent = state.tasks.filter(t => t.priority === "Critical").length;
+    $("statHigh").textContent = state.tasks.filter(t => t.priority === "High").length;
+    $("statMedium").textContent = state.tasks.filter(t => t.priority === "Medium").length;
+    $("statLow").textContent = state.tasks.filter(t => t.priority === "Low").length;
+}
+
+/* ========== CALENDAR ========== */
+function renderCalendar() {
+    const grid = $("calendarGrid");
+    grid.innerHTML = "";
+
+    const now = new Date();
+    const monthDate = new Date(now.getFullYear(), now.getMonth() + state.calendarMonthOffset, 1);
+    const year = monthDate.getFullYear();
+    const month = monthDate.getMonth();
+
+    $("calendarTitle").textContent = monthDate.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const weekdayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+    weekdayNames.forEach(name => {
+        grid.appendChild(createEl("div", "timetable-header-cell", name));
+    });
+
+    for (let i = 0; i < firstDayIndex; i++) {
+        grid.appendChild(createEl("div", "calendar-day"));
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const iso = new Date(year, month, day).toISOString().slice(0,10);
+        const dayEl = createEl("div", "calendar-day");
+
+        const header = createEl("div", "calendar-day-header");
+        header.appendChild(createEl("div", "calendar-day-number", String(day)));
+        header.appendChild(createEl("div", "text-muted", iso === todayISO() ? "Today" : ""));
+
+        const tasksContainer = createEl("div", "calendar-day-tasks");
+        const tasksForDay = state.tasks.filter(t => t.due === iso)
+            .sort((a, b) => getPriorityOrder(a.priority) - getPriorityOrder(b.priority));
+
+        tasksForDay.forEach(t => {
+            const pill = createEl("div", "calendar-task-pill", t.title);
+            pill.classList.add(getPriorityBadgeClass(t.priority));
+            tasksContainer.appendChild(pill);
+        });
+
+        dayEl.appendChild(header);
+        dayEl.appendChild(tasksContainer);
+        grid.appendChild(dayEl);
+    }
+}
+
+$("btnPrevMonth").addEventListener("click", () => {
+    state.calendarMonthOffset -= 1;
+    renderCalendar();
+});
+$("btnNextMonth").addEventListener("click", () => {
+    state.calendarMonthOffset += 1;
+    renderCalendar();
+});
+$("btnTodayMonth").addEventListener("click", () => {
+    state.calendarMonthOffset = 0;
+    renderCalendar();
+});
+
+/* ========== STUDY PLANNER ========== */
+$("btnAddStudy").addEventListener("click", () => {
+    const subject = $("studySubject").value.trim();
+    const linkedTaskId = $("studyLinkedTask").value || "";
+    const date = $("studyDate").value;
+    const start = $("studyStart").value;
+    const end = $("studyEnd").value;
+    const notes = $("studyNotes").value.trim();
+
+    if (!subject || !date || !start || !end) {
+        alert("Fill in subject, date, start, and end time.");
+        return;
+    }
+
+    const block = {
+        id: generateId("study"),
+        subject,
+        linkedTaskId,
+        date,
+        start,
+        end,
+        notes
+    };
+
+    state.studyBlocks.push(block);
+    saveState();
+    clearStudyInputs();
+    renderAll();
+});
+
+function clearStudyInputs() {
+    $("studySubject").value = "";
+    $("studyLinkedTask").value = "";
+    $("studyDate").value = "";
+    $("studyStart").value = "";
+    $("studyEnd").value = "";
+    $("studyNotes").value = "";
+}
+
+$("btnClearStudy").addEventListener("click", () => {
+    if (!confirm("Clear ALL study blocks?")) return;
+    state.studyBlocks = [];
+    saveState();
+    renderAll();
+});
+
+function computeDurationMinutes(start, end) {
+    const [sh, sm] = start.split(":").map(Number);
+    const [eh, em] = end.split(":").map(Number);
+    return Math.max(0, (eh * 60 + em) - (sh * 60 + sm));
+}
+
+function renderStudyList(containerId, blocks) {
+    const container = $(containerId);
+    container.innerHTML = "";
+
+    if (!blocks.length) {
+        container.appendChild(createEl("div", "card-subtitle text-muted", "No study blocks here yet."));
+        return;
+    }
+
+    blocks.forEach(block => {
+        const item = createEl("div", "study-block");
+
+        const main = createEl("div", "study-main");
+        main.appendChild(createEl("div", "task-title", block.subject));
+        main.appendChild(createEl("div", "study-meta",
+            `${formatDateHuman(block.date)} · ${block.start}–${block.end}`
+        ));
+
+        if (block.notes) {
+            main.appendChild(createEl("div", "study-meta", "Notes: " + block.notes));
+        }
+
+        if (block.linkedTaskId) {
+            const linkedTask = state.tasks.find(t => t.id === block.linkedTaskId);
+            if (linkedTask) {
+                main.appendChild(createEl("div", "study-meta",
+                    `Linked to: ${linkedTask.title} (${linkedTask.subject})`
+                ));
+            }
+        }
+
+        const middle = createEl("div");
+        middle.appendChild(createEl("div", "study-meta",
+            `Duration: ${computeDurationMinutes(block.start, block.end)} min`
+        ));
+
+        const actions = createEl("div", "study-actions");
+        const btnDelete = createEl("button", "btn btn-danger btn-sm", "Delete");
+        btnDelete.addEventListener("click", () => {
+            if (!confirm("Delete this study block?")) return;
+            state.studyBlocks = state.studyBlocks.filter(b => b.id !== block.id);
+            saveState();
+            renderAll();
+        });
+        actions.appendChild(btnDelete);
+
+        item.appendChild(main);
+        item.appendChild(middle);
+        item.appendChild(actions);
+
+        container.appendChild(item);
+    });
+}
+
+/* Study view by date */
+$("btnTodayStudy").addEventListener("click", () => {
+    $("studyViewDate").value = todayISO();
+    renderStudyByDate();
+});
+$("studyViewDate").addEventListener("change", renderStudyByDate);
+
+function renderStudyByDate() {
+    const date = $("studyViewDate").value || todayISO();
+    const blocks = state.studyBlocks
+        .filter(b => b.date === date)
+        .sort((a, b) => a.start.localeCompare(b.start));
+    renderStudyList("studyListByDate", blocks);
+}
+
+function renderStudyView() {
+    const all = [...state.studyBlocks]
+        .sort((a, b) => compareDateOnly(a.date, b.date) || a.start.localeCompare(b.start));
+    renderStudyList("studyListAll", all);
+    renderStudyByDate();
+}
+
+/* ========== TIMETABLE ========== */
+function renderTimetable() {
+    const grid = $("timetableGrid");
+    grid.innerHTML = "";
+
+    const weekdayNames = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+
+    grid.appendChild(createEl("div", "timetable-header-cell", "Time"));
+    weekdayNames.forEach(name => {
+        grid.appendChild(createEl("div", "timetable-header-cell", name));
+    });
+
+    const startHour = 8;
+    const endHour = 20;
+
+    for (let hour = startHour; hour <= endHour; hour++) {
+        const timeLabel = String(hour).padStart(2, "0") + ":00";
+        grid.appendChild(createEl("div", "timetable-time-cell", timeLabel));
+
+        for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+            const slot = createEl("div", "timetable-slot");
+            const content = createEl("div", "timetable-slot-content");
+            slot.appendChild(content);
+            grid.appendChild(slot);
+
+            const blocks = state.studyBlocks.filter(b => {
+                const d = new Date(b.date + "T00:00:00");
+                const weekday = (d.getDay() + 6) % 7; // Mon=0, Sun=6
+                const [sh] = b.start.split(":").map(Number);
+                return weekday === dayIndex && sh === hour;
+            });
+
+            if (blocks.length) {
+                content.textContent = blocks.map(b => b.subject).join(", ");
+            }
+        }
+    }
+}
+
+/* ========== EXPORT / IMPORT ========== */
+$("btnExport").addEventListener("click", () => {
+    const data = JSON.stringify(state, null, 2);
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "study-planner-backup.json";
+    a.click();
+    URL.revokeObjectURL(url);
+});
+
+$("btnImport").addEventListener("click", () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/json";
+    input.addEventListener("change", () => {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const imported = JSON.parse(reader.result);
+                if (Array.isArray(imported.tasks)) state.tasks = imported.tasks;
+                if (Array.isArray(imported.studyBlocks)) state.studyBlocks = imported.studyBlocks;
+                saveState();
+                renderAll();
+                alert("Backup imported.");
+            } catch {
+                alert("Import failed.");
+            }
+        };
+        reader.readAsText(file);
+    });
+    input.click();
+});
+
+/* ========== FILTER HANDLERS ========== */
+["filterSubject","filterPriority","filterStatus"].forEach(id => {
+    const el = $(id);
+    if (el) el.addEventListener("change", renderDashboard);
+});
+["filterSubjectTasks","filterPriorityTasks","filterStatusTasks"].forEach(id => {
+    const el = $(id);
+    if (el) el.addEventListener("change", renderTasksView);
+});
+
+/* ========== RENDER ALL ========== */
+function renderAll() {
+    renderSidebarStats();
+    renderSubjectFilters();
+    renderLinkedTaskOptions();
+    renderDashboard();
+    renderTasksView();
+    renderCalendar();
+    renderStudyView();
+    renderTimetable();
+}
+
+/* ========== INIT ========== */
+loadState();
+$("studyViewDate").value = todayISO();
+renderAll();
+</script>
 </body>
 </html>
