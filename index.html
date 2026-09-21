@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>FluxBound Prototype</title>
+  <style>
+    body {
+      margin: 0;
+      background: #050814;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+    #gameCanvas {
+      background: radial-gradient(circle at top, #1b2b4f 0%, #050814 60%);
+      display: block;
+      margin: 0 auto;
+      border: 2px solid #3af;
+    }
+    #ui {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      font-size: 14px;
+      background: rgba(0,0,0,0.5);
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #3af;
+    }
+    .ability {
+      color: #3af;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" width="960" height="540"></canvas>
+  <div id="ui">
+    <div><b>FluxBound Prototype</b></div>
+    <div>Tempo (Time): <span class="ability">W A S D</span> move, <span class="ability">F</span> slow time</div>
+    <div>Vector (Gravity): <span class="ability">Arrow keys</span> move, <span class="ability">RShift</span> flip gravity</div>
+    <div>Goal: Both players reach the glowing portal.</div>
+    <div>Level: <span id="levelDisplay">1</span></div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const WIDTH = canvas.width;
+    const HEIGHT = canvas.height;
+    const GRAVITY_NORMAL = 0.6;
+    const GRAVITY_INVERTED = -0.6;
+
+    let gravityDirection = 1; // 1 = normal, -1 = inverted
+    let timeScale = 1;        // 1 = normal, 0.4 = slow
+
+    const keys = {};
+
+    window.addEventListener("keydown", (e) => {
+      keys[e.code] = true;
+    });
+    window.addEventListener("keyup", (e) => {
+      keys[e.code] = false;
+    });
+
+    class Player {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = 0;
+        this.vy = 0;
+        this.width = 28;
+        this.height = 40;
+        this.color = color;
+        this.onGround = false;
+      }
+
+      update(input, platforms) {
+        const moveSpeed = 3;
+        const jumpSpeed = 10;
+
+        // Horizontal movement
+        if (input.left) this.vx = -moveSpeed;
+        else if (input.right) this.vx = moveSpeed;
+        else this.vx = 0;
+
+        // Jump (depends on gravity direction)
+        if (input.jump && this.onGround) {
+          this.vy = -jumpSpeed * gravityDirection;
+          this.onGround = false;
+        }
+
+        // Gravity
+        this.vy += GRAVITY_NORMAL * gravityDirection * timeScale;
+
+        // Apply velocity
+        this.x += this.vx * timeScale;
+        this.y += this.vy * timeScale;
+
+        // Collisions with platforms
+        this.onGround = false;
+        for (let p of platforms) {
+          if (this.x < p.x + p.width &&
+              this.x + this.width > p.x &&
+              this.y < p.y + p.height &&
+              this.y + this.height > p.y) {
+
+            // Simple vertical resolution
+            if (gravityDirection === 1) {
+              // Normal gravity: stand on top
+              this.y = p.y - this.height;
+              this.vy = 0;
+              this.onGround = true;
+            } else {
+              // Inverted gravity: stand on bottom
+              this.y = p.y + p.height;
+              this.vy = 0;
+              this.onGround = true;
+            }
+          }
+        }
+
+        // Keep inside screen
+        if (this.x < 0) this.x = 0;
+        if (this.x + this.width > WIDTH) this.x = WIDTH - this.width;
+        if (gravityDirection === 1) {
+          if (this.y + this.height > HEIGHT) {
+            this.y = HEIGHT - this.height;
+            this.vy = 0;
+            this.onGround = true;
+          }
+        } else {
+          if (this.y < 0) {
+            this.y = 0;
+            this.vy = 0;
+            this.onGround = true;
+          }
+        }
+      }
+
+      draw() {
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+      }
+    }
+
+    class Platform {
+      constructor(x, y, width, height, type = "static") {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.type = type;
+        this.baseX = x;
+        this.baseY = y;
+        this.t = Math.random() * 100;
+      }
+
+      update() {
+        if (this.type === "movingHorizontal") {
+          this.t += 0.02 * timeScale;
+          this.x = this.baseX + Math.sin(this.t) * 80;
+        } else if (this.type === "movingVertical") {
+          this.t += 0.02 * timeScale;
+          this.y = this.baseY + Math.sin(this.t) * 60;
+        }
+      }
+
+      draw() {
+        ctx.fillStyle = "#1f2937";
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+        ctx.strokeStyle = "#3af";
+        ctx.strokeRect(this.x, this.y, this.width, this.height);
+      }
+    }
+
+    class Portal {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 26;
+      }
+
+      draw() {
+        const gradient = ctx.createRadialGradient(
+          this.x, this.y, 5,
+          this.x, this.y, this.radius
+        );
+        gradient.addColorStop(0, "#fff");
+        gradient.addColorStop(0.4, "#3af");
+        gradient.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      contains(player) {
+        const cx = player.x + player.width / 2;
+        const cy = player.y + player.height / 2;
+        const dx = cx - this.x;
+        const dy = cy - this.y;
+        return Math.sqrt(dx * dx + dy * dy) < this.radius;
+      }
+    }
+
+    // LEVELS
+    const levels = [
+      {
+        name: "Clockwork Corridor",
+        platforms: [
+          new Platform(0, 500, 960, 40),          // floor
+          new Platform(150, 420, 120, 20),
+          new Platform(320, 360, 120, 20, "movingHorizontal"),
+          new Platform(520, 300, 120, 20),
+          new Platform(720, 240, 140, 20, "movingVertical")
+        ],
+        portal: new Portal(820, 210),
+        tempoStart: { x: 60, y: 450 },
+        vectorStart: { x: 120, y: 450 }
+      },
+      {
+        name: "Inverted Garden",
+        platforms: [
+          new Platform(0, 500, 960, 40),
+          new Platform(200, 430, 120, 20),
+          new Platform(380, 360, 120, 20),
+          new Platform(560, 290, 120, 20, "movingVertical"),
+          new Platform(740, 220, 140, 20)
+        ],
+        portal: new Portal(820, 190),
+        tempoStart: { x: 80, y: 450 },
+        vectorStart: { x: 140, y: 450 }
+      }
+    ];
+
+    let currentLevelIndex = 0;
+    let platforms = [];
+    let portal;
+    let tempo;
+    let vector;
+
+    function loadLevel(index) {
+      const level = levels[index];
+      platforms = level.platforms.map(p => p); // shallow copy
+      portal = level.portal;
+      tempo = new Player(level.tempoStart.x, level.tempoStart.y, "#ffcc33");
+      vector = new Player(level.vectorStart.x, level.vectorStart.y, "#33ffcc");
+      document.getElementById("levelDisplay").textContent = (index + 1) + " - " + level.name;
+      gravityDirection = 1;
+      timeScale = 1;
+    }
+
+    loadLevel(currentLevelIndex);
+
+    function handleAbilities() {
+      // Tempo: slow time with F
+      if (keys["KeyF"]) {
+        timeScale = 0.4;
+      } else {
+        timeScale = 1;
+      }
+
+      // Vector: flip gravity with RightShift
+      if (keys["ShiftRight"] && !handleAbilities.gravityPressed) {
+        gravityDirection *= -1;
+        handleAbilities.gravityPressed = true;
+      }
+      if (!keys["ShiftRight"]) {
+        handleAbilities.gravityPressed = false;
+      }
+    }
+    handleAbilities.gravityPressed = false;
+
+    function update() {
+      handleAbilities();
+
+      // Update platforms
+      for (let p of platforms) {
+        p.update();
+      }
+
+      // Tempo input (WASD)
+      const tempoInput = {
+        left: keys["KeyA"],
+        right: keys["KeyD"],
+        jump: keys["KeyW"]
+      };
+
+      // Vector input (Arrow keys)
+      const vectorInput = {
+        left: keys["ArrowLeft"],
+        right: keys["ArrowRight"],
+        jump: keys["ArrowUp"]
+      };
+
+      tempo.update(tempoInput, platforms);
+      vector.update(vectorInput, platforms);
+
+      // Check portal
+      const tempoIn = portal.contains(tempo);
+      const vectorIn = portal.contains(vector);
+
+      if (tempoIn && vectorIn) {
+        currentLevelIndex++;
+        if (currentLevelIndex >= levels.length) {
+          currentLevelIndex = 0; // loop back for now
+        }
+        loadLevel(currentLevelIndex);
+      }
+    }
+
+    function drawBackground() {
+      ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+      // Subtle grid / dimension feel
+      ctx.strokeStyle = "rgba(58,175,255,0.1)";
+      ctx.lineWidth = 1;
+      for (let x = 0; x < WIDTH; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, HEIGHT);
+        ctx.stroke();
+      }
+      for (let y = 0; y < HEIGHT; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(WIDTH, y);
+        ctx.stroke();
+      }
+
+      // Gravity direction indicator
+      ctx.fillStyle = "#3af";
+      ctx.font = "14px sans-serif";
+      ctx.fillText("Gravity: " + (gravityDirection === 1 ? "Down" : "Up"), WIDTH - 140, 24);
+      ctx.fillText("Time: " + (timeScale < 1 ? "Slowed" : "Normal"), WIDTH - 140, 44);
+    }
+
+    function render() {
+      drawBackground();
+
+      // Draw platforms
+      for (let p of platforms) {
+        p.draw();
+      }
+
+      // Draw portal
+      portal.draw();
+
+      // Draw players
+      tempo.draw();
+      vector.draw();
+
+      // Player labels
+      ctx.fillStyle = "#fff";
+      ctx.font = "12px sans-serif";
+      ctx.fillText("Tempo", tempo.x, tempo.y - 6);
+      ctx.fillText("Vector", vector.x, vector.y - 6);
+    }
+
+    function gameLoop() {
+      update();
+      render();
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+  </script>
+</body>
+</html>
